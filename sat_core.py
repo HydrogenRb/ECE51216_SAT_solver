@@ -3,9 +3,6 @@
 # assignment: dict {变量: 布尔值}， 变量是正整数， 这个dict的长度是变量的数量
 
 import typing
-
-from sat_solver import pure_literals
-
 Assignment = typing.Dict[int, bool]
 Clause = typing.List[int]
 Formula = typing.List[Clause]
@@ -135,9 +132,13 @@ def DPLL(Target_Formula: Formula) -> typing.Tuple[Formula, bool]:
     while find_unit_clauses(Target_Formula):
         Target_Formula = remove_unit_clauses(Target_Formula, find_unit_clauses(Target_Formula))
         # 如果有unit clauses 循环删掉所有的unit clauses
+        if main_flag:
+            print("处理子句，目前的公式为:", Target_Formula)
     
     Target_Formula = remove_pure_lit(Target_Formula, find_pure_lit(Target_Formula))
     #删掉所有的纯文字
+    if main_flag:
+        print("处理纯文字，目前的公式为:", Target_Formula)
        
     #输出结果
     if test_unsat(Target_Formula):
@@ -148,10 +149,14 @@ def DPLL(Target_Formula: Formula) -> typing.Tuple[Formula, bool]:
 
     lit = Target_Formula[0][0]
     new_formula = remove_lit(Target_Formula, lit) #左边
+    if main_flag:
+        print("当前递归层数进入左边")
     _, result = DPLL(new_formula)
     if result:
         return new_formula, True
     new_formula = remove_lit(Target_Formula, -lit) #右边
+    if main_flag:
+        print("当前递归层数进入右边")
     _, result = DPLL(new_formula)
     if result:
         return new_formula, True
@@ -213,4 +218,5 @@ def main ():
         print("UNSATISFIABLE")
         
 if __name__ == "__main__":
+    main_flag = True
     main() #运行入口
