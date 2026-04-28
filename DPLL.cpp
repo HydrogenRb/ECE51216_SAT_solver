@@ -4,8 +4,72 @@
 #include <sstream>
 #include <cstdlib>
 #include <fstream>
+#include <chrono>
 
 using namespace std;
+
+// ==================== Performance Monitor ====================
+// All monitor variables start with monitor_ prefix
+struct PerformanceMonitor {
+    // Time measurements
+    chrono::high_resolution_clock::time_point monitor_start_time;
+    double monitor_total_time = 0.0;
+    double monitor_unit_propagation_time = 0.0;
+    
+    // Operation counters
+    long long monitor_clause_checks = 0;
+    long long monitor_variable_assignments = 0;
+    long long monitor_backtrack_count = 0;
+    long long monitor_state_copies = 0;
+    long long monitor_unit_propagation_rounds = 0;
+    long long monitor_unit_propagation_calls = 0;
+    
+    // Recursion tracking
+    int monitor_current_recursion_depth = 0;
+    int monitor_max_recursion_depth = 0;
+} monitor_stats;
+
+void monitor_start() {
+    monitor_stats.monitor_start_time = chrono::high_resolution_clock::now();
+}
+
+void monitor_end() {
+    auto end_time = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end_time - monitor_stats.monitor_start_time;
+    monitor_stats.monitor_total_time = elapsed.count();
+}
+
+void monitor_print_results() {
+    printf("\n[monitor output] ========== PERFORMANCE ANALYSIS RESULTS ==========\n");
+    printf("[monitor output] Total Execution Time: %.6f seconds\n", monitor_stats.monitor_total_time);
+    printf("[monitor output] Unit Propagation Time: %.6f seconds (%.2f%% of total)\n", 
+           monitor_stats.monitor_unit_propagation_time,
+           (monitor_stats.monitor_total_time > 0) ? 
+           (monitor_stats.monitor_unit_propagation_time / monitor_stats.monitor_total_time * 100) : 0);
+    
+    printf("\n[monitor output] --- Operation Counters ---\n");
+    printf("[monitor output] Total Clause Checks: %lld\n", monitor_stats.monitor_clause_checks);
+    printf("[monitor output] Variable Assignments: %lld\n", monitor_stats.monitor_variable_assignments);
+    printf("[monitor output] Backtrack Operations: %lld\n", monitor_stats.monitor_backtrack_count);
+    printf("[monitor output] State Copies: %lld\n", monitor_stats.monitor_state_copies);
+    printf("[monitor output] Unit Propagation Calls: %lld\n", monitor_stats.monitor_unit_propagation_calls);
+    printf("[monitor output] Unit Propagation Rounds: %lld\n", monitor_stats.monitor_unit_propagation_rounds);
+    
+    printf("\n[monitor output] --- Recursion Analysis ---\n");
+    printf("[monitor output] Maximum Recursion Depth: %d\n", monitor_stats.monitor_max_recursion_depth);
+    
+    printf("\n[monitor output] --- Efficiency Metrics ---\n");
+    if (monitor_stats.monitor_variable_assignments > 0) {
+        printf("[monitor output] Avg Checks per Assignment: %.2f\n", 
+               (double)monitor_stats.monitor_clause_checks / monitor_stats.monitor_variable_assignments);
+    }
+    if (monitor_stats.monitor_unit_propagation_calls > 0) {
+        printf("[monitor output] Avg Rounds per UP Call: %.2f\n", 
+               (double)monitor_stats.monitor_unit_propagation_rounds / monitor_stats.monitor_unit_propagation_calls);
+    }
+    printf("[monitor output] ============================================================\n\n");
+}
+// ==============================================================
 
 bool readCNF(string filename, int& num_var, int& num_clause, vector<vector<int>>& clauses){
     ifstream fin(filename);
@@ -50,6 +114,7 @@ int literalValue(int literal, vector<int>& assignment){
 }
 
 bool isClauseSat(vector<int>& clause, vector<int>& assignment){
+    monitor_stats.monitor_clause_checks++;
     for (int i=0; i<clause.size(); i++){
         int literal = clause[i];
         if (literalValue(literal, assignment) == 1) return true;
@@ -58,6 +123,7 @@ bool isClauseSat(vector<int>& clause, vector<int>& assignment){
 }
 
 bool isClauseConflict(vector<int>& clause, vector<int>& assignment){
+    monitor_stats.monitor_clause_checks++;
     for (int i=0; i<clause.size(); i++){
         int literal = clause[i];
         if(literalValue(literal, assignment) != -1) return false;
@@ -86,19 +152,29 @@ bool getUnitLiteral(vector<int>& clause, vector<int>& assignment, int& unit_lite
 
 //x: x=1, x': x=-1
 void assignLiteral(int literal, vector<int>& assignment){
+    monitor_stats.monitor_variable_assignments++;
     int var = abs(literal);
     if (literal > 0) assignment[var] = 1; 
     else assignment[var] = -1; 
 }
 
 bool unitPropagation(vector<vector<int>>& clauses, vector<int>& assignment){
+    monitor_stats.monitor_unit_propagation_calls++;
+    auto up_start = chrono::high_resolution_clock::now();
+    
     bool changed = true;
     while (changed){
+        monitor_stats.monitor_unit_propagation_rounds++;
         changed = false;
         for (int i=0; i<clauses.size(); i++){
             vector<int> clause = clauses[i];
             if (isClauseSat(clause, assignment)) continue;
-            if (isClauseConflict(clause, assignment)) return false;
+            if (isClauseConflict(clause, assignment)) {
+                auto up_end = chrono::high_resolution_clock::now();
+                chrono::duration<double> up_elapsed = up_end - up_start;
+                monitor_stats.monitor_unit_propagation_time += up_elapsed.count();
+                return false;
+            }
             int unit_Literal;
             if (getUnitLiteral(clause, assignment, unit_Literal)){
                 assignLiteral(unit_Literal, assignment);
@@ -106,12 +182,17 @@ bool unitPropagation(vector<vector<int>>& clauses, vector<int>& assignment){
             }
         }
     }
+    
+    auto up_end = chrono::high_resolution_clock::now();
+    chrono::duration<double> up_elapsed = up_end - up_start;
+    monitor_stats.monitor_unit_propagation_time += up_elapsed.count();
     return true;
 }
 
 bool allClauseSat(vector<vector<int>>& clauses, vector<int>& assignment){
     for (int i=0; i<clauses.size(); i++){
         vector<int> clause = clauses[i];
+        monitor_stats.monitor_clause_checks++;
         if (!isClauseSat(clause, assignment)) return false;
     }
     return true;
@@ -125,21 +206,49 @@ int chooseVar(vector<int>& assignment){
 }
 
 bool dpll(vector<vector<int>>& clauses, vector<int>& assignment){
-    if (!unitPropagation(clauses, assignment)) return false;
-    if (allClauseSat(clauses, assignment)) return true;
+    monitor_stats.monitor_current_recursion_depth++;
+    if (monitor_stats.monitor_current_recursion_depth > monitor_stats.monitor_max_recursion_depth) {
+        monitor_stats.monitor_max_recursion_depth = monitor_stats.monitor_current_recursion_depth;
+    }
+    
+    if (!unitPropagation(clauses, assignment)) {
+        monitor_stats.monitor_current_recursion_depth--;
+        return false;
+    }
+    if (allClauseSat(clauses, assignment)) {
+        monitor_stats.monitor_current_recursion_depth--;
+        return true;
+    }
     int var = chooseVar(assignment);
-    if (var == -1) return false;
+    if (var == -1) {
+        monitor_stats.monitor_current_recursion_depth--;
+        return false;
+    }
+    
     vector<int> pre_node = assignment;
+    monitor_stats.monitor_state_copies++;
+    
     assignment[var] = 1;
+    monitor_stats.monitor_backtrack_count++;
     if (dpll(clauses, assignment)){
+        monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
+    
     assignment = pre_node;
+    monitor_stats.monitor_state_copies++;
+    
     assignment[var] = -1;
+    monitor_stats.monitor_backtrack_count++;
     if (dpll(clauses, assignment)){
+        monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
+    
     assignment = pre_node;
+    monitor_stats.monitor_state_copies++;
+    
+    monitor_stats.monitor_current_recursion_depth--;
     return false;
 }
 
@@ -174,6 +283,8 @@ int main(int argc, char* argv[]){
         return 1;
     }
     
+    monitor_start();
+    
     int num_var = 0;
     int num_clause = 0;
     vector<vector<int>> clauses;
@@ -203,6 +314,9 @@ int main(int argc, char* argv[]){
     else{
         cout << "RESULT:UNSAT\n";
     }
+    
+    monitor_end();
+    monitor_print_results();
 
     return 0;
 }
