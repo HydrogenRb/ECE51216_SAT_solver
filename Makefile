@@ -5,6 +5,10 @@ CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
 # Target executable name
 TARGET = mysAT
+PYTHON = python3
+BATCH_SCRIPT = batch.py
+BATCH_OUTPUT = batch_results.csv
+TEST_DIR = test
 
 # Source files
 SOURCES = DPLL.cpp
@@ -25,29 +29,26 @@ $(TARGET): $(OBJECTS)
 
 # Clean build artifacts
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) $(BATCH_OUTPUT)
 
-# Test with provided CNF files
-test: $(TARGET)
-	@echo "Testing with uf20-01.cnf..."
-	./$(TARGET) uf20-01.cnf
-	@echo "\n================================\n"
-	@echo "Testing with uf20-02.cnf..."
-	./$(TARGET) uf20-02.cnf
-	@echo "\n================================\n"
-	@echo "Testing with uf20-03.cnf..."
-	./$(TARGET) uf20-03.cnf
+# Batch test: run batch.py over test/**/*.cnf and write monitor stats to CSV.
+batch: $(TARGET) $(BATCH_SCRIPT)
+	$(PYTHON) $(BATCH_SCRIPT) --solver ./$(TARGET) --test-dir $(TEST_DIR) --output $(BATCH_OUTPUT)
+
+# Test with all CNF files under test/
+test: batch
 
 # Help target
 help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all   - Build the DPLL SAT solver executable (default)"
-	@echo "  clean - Remove build artifacts and executable"
-	@echo "  test  - Build and run tests on CNF files"
-	@echo "  help  - Display this help message"
+	@echo "  all    - Build the DPLL SAT solver executable (default)"
+	@echo "  batch  - Run all test/**/*.cnf and write $(BATCH_OUTPUT)"
+	@echo "  clean  - Remove build artifacts, executable, and batch output"
+	@echo "  test   - Alias for batch"
+	@echo "  help   - Display this help message"
 	@echo ""
 	@echo "Run the solver with: ./mysAT <cnf_file>"
 
-.PHONY: all clean test help
+.PHONY: all clean batch test help

@@ -41,6 +41,8 @@ void monitor_end() {
 
 void monitor_print_results() {
     printf("\n[monitor output] ========== PERFORMANCE ANALYSIS RESULTS ==========\n");
+    printf("[monitor output] Start Time: %.6f\n",
+           chrono::duration<double>(monitor_stats.monitor_start_time.time_since_epoch()).count());
     printf("[monitor output] Total Execution Time: %.6f seconds\n", monitor_stats.monitor_total_time);
     printf("[monitor output] Unit Propagation Time: %.6f seconds (%.2f%% of total)\n", 
            monitor_stats.monitor_unit_propagation_time,
@@ -56,6 +58,7 @@ void monitor_print_results() {
     printf("[monitor output] Unit Propagation Rounds: %lld\n", monitor_stats.monitor_unit_propagation_rounds);
     
     printf("\n[monitor output] --- Recursion Analysis ---\n");
+    printf("[monitor output] Current Recursion Depth: %d\n", monitor_stats.monitor_current_recursion_depth);
     printf("[monitor output] Maximum Recursion Depth: %d\n", monitor_stats.monitor_max_recursion_depth);
     
     printf("\n[monitor output] --- Efficiency Metrics ---\n");
