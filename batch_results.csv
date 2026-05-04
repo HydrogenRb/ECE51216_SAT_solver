@@ -1,5 +1,0 @@
-cnf_file,category,expected_result,actual_result,correct,exit_code,timed_out,monitor_start_time,monitor_total_time,monitor_unit_propagation_time,monitor_clause_checks,monitor_variable_assignments,monitor_backtrack_count,monitor_state_copies,monitor_unit_propagation_rounds,monitor_unit_propagation_calls,monitor_current_recursion_depth,monitor_max_recursion_depth,stderr
-test/sat/sw100-1.cnf,sat,SAT,SAT,TRUE,0,FALSE,1777730047.079026,0.114729,0.109146,6916784,7462,720,1044,1970,721,0,69,
-test/sat/sw100-2.cnf,sat,SAT,SAT,TRUE,0,FALSE,1777730047.199520,1.474208,1.442849,92181709,211606,8432,12617,25965,8433,0,62,
-test/unsat/uuf100-0635.cnf,unsat,UNSAT,UNSAT,TRUE,0,FALSE,1777730048.679056,3.391441,3.380420,192854572,1581763,128682,193023,323186,128683,0,40,
-test/unsat/uuf100-0771.cnf,unsat,UNSAT,UNSAT,TRUE,0,FALSE,1777730052.075054,4.925877,4.909849,281536183,2309332,191512,287268,480325,191513,0,35,

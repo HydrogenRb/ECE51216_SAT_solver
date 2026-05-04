@@ -8,6 +8,8 @@
 
 using namespace std;
 
+int chooseDLISLiteral(const vector<vector<int>>& clauses, const vector<int>& assignment);
+
 // ==================== Performance Monitor ====================
 // All monitor variables start with monitor_ prefix
 struct PerformanceMonitor {
@@ -201,14 +203,23 @@ bool allClauseSat(vector<vector<int>>& clauses, vector<int>& assignment){
     return true;
 }
 
-int chooseVar(vector<int>& assignment){
-    for (int i=1; i<assignment.size(); i++){
-        if (assignment[i] == 0) return i;
+int chooseVar(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, int& var){
+    if (useDLIS) {
+        var = chooseDLISLiteral(clauses, assignment); //var作为传入 返回值是是否成功
+        return 1;
+    } else {
+        for (int i=1; i<assignment.size(); i++){
+            if (assignment[i] == 0){
+                var = i;
+                return 1;
+            }
+        }
     }
-    return -1;
+    //To liu: 你可能修改这个部分
+    return 2; //1表示成功 2表示没有变量了
 }
 
-bool dpll(vector<vector<int>>& clauses, vector<int>& assignment){
+bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, bool useWatchedLit){
     monitor_stats.monitor_current_recursion_depth++;
     if (monitor_stats.monitor_current_recursion_depth > monitor_stats.monitor_max_recursion_depth) {
         monitor_stats.monitor_max_recursion_depth = monitor_stats.monitor_current_recursion_depth;
@@ -222,18 +233,21 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
-    int var = chooseVar(assignment);
-    if (var == -1) {
+
+    int var = 0;
+    if (chooseVar(clauses, assignment, useDLIS, var) == 2) {
         monitor_stats.monitor_current_recursion_depth--;
         return false;
     }
+    //到这一步，var是选择的变量
+    int first_value = var > 0 ? 1 : -1; //可以删掉这个吗？
     
     vector<int> pre_node = assignment;
     monitor_stats.monitor_state_copies++;
     
-    assignment[var] = 1;
+    assignment[var] = first_value;
     monitor_stats.monitor_backtrack_count++;
-    if (dpll(clauses, assignment)){
+    if (dpll(clauses, assignment, useDLIS, useWatchedLit)){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
@@ -241,9 +255,9 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment){
     assignment = pre_node;
     monitor_stats.monitor_state_copies++;
     
-    assignment[var] = -1;
+    assignment[var] = -first_value;
     monitor_stats.monitor_backtrack_count++;
-    if (dpll(clauses, assignment)){
+    if (dpll(clauses, assignment, useDLIS, useWatchedLit)){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
@@ -280,10 +294,58 @@ bool verifySolution(vector<vector<int>>& clauses, vector<int>& assignment)
     return true;
 }
 
-int main(int argc, char* argv[]){
-    if (argc<2){
-        cout << "Input format: ./mysAT benchmark.cnf\n";
-        return 1;
+bool Change_DLIS_FLAG(const string& value, bool& useDLIS) {
+    if (value == "0") {
+        useDLIS = false;
+        return true;
+    }
+    if (value == "1") {
+        useDLIS = true;
+        return true;
+    }
+    return false;
+}
+
+bool Change_WatchedLit_FLAG(const string& value, bool& useWatchedLit) {
+    if (value == "0") {
+        useWatchedLit = false;
+        return true;
+    }
+    if (value == "1") {
+        useWatchedLit = true;
+        return true;
+    }
+    return false;
+}
+
+int main(int argc, char* argv[]){ //输入参数有
+    //示例 DPLL --DLIS 1
+    //示例 DPLL --watched-literals 1
+    //示例 DPLL --DLIS 1 --watched-literals 1
+    bool useDLIS_FLAG = false;
+    bool useWatchedLit_FLAG = false;
+
+    for (int i = 0; i < argc; i++) {
+        string arg = argv[i];
+        string value;
+
+        if (arg == "--DLIS") {
+            if (i + 1 >= argc) { //检查是否有后续参数
+                cerr << "error: --DLIS requires 0 or 1\n";
+                return 1;
+            }
+            value = argv[++i];
+            Change_DLIS_FLAG(value, useDLIS_FLAG);
+        }
+
+        if (arg == "--watched-literals") {
+            if (i + 1 >= argc) { //检查是否有后续参数
+                cerr << "error: --watched-literals requires 0 or 1\n";
+                return 1;
+            }
+            value = argv[++i];
+            Change_WatchedLit_FLAG(value, useWatchedLit_FLAG);
+            }
     }
     
     monitor_start();
@@ -296,7 +358,7 @@ int main(int argc, char* argv[]){
 
     vector<int> assignment(num_var+1,0);
 
-    if (dpll(clauses, assignment)){
+    if (dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG)){
         cout << "RESULT:SAT\n";
         cout << "ASSIGNMENT:";
         for (int i=1; i<= num_var; i++){

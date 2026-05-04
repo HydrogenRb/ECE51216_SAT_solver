@@ -39,6 +39,7 @@ MONITOR_PATTERNS = {
 
 def expected_result(cnf_path, test_dir):
     parts = [part.lower() for part in cnf_path.relative_to(test_dir).parts]
+    parts.extend(part.lower() for part in test_dir.parts)
     if "unsat" in parts:
         return "UNSAT"
     if "sat" in parts:
@@ -62,10 +63,10 @@ def parse_monitor(stdout):
     return stats
 
 
-def run_solver(solver, cnf_path, test_dir, timeout):
+def run_solver(solver, cnf_path, test_dir, timeout, dlis):
     try:
         completed = subprocess.run(
-            [str(solver), str(cnf_path)],
+            [str(solver), str(cnf_path), "--DLIS", str(dlis)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -96,6 +97,7 @@ def run_solver(solver, cnf_path, test_dir, timeout):
     row = {
         "cnf_file": str(cnf_path),
         "category": cnf_path.relative_to(test_dir).parts[0],
+        "DLIS": dlis,
         "expected_result": expected,
         "actual_result": actual,
         "correct": "TRUE" if correct else "FALSE",
@@ -115,6 +117,7 @@ def main():
     parser.add_argument("--test-dir", default="test", help="Directory containing sat/ and unsat/ CNF files.")
     parser.add_argument("--output", default="batch_results.csv", help="CSV output path.")
     parser.add_argument("--timeout", type=float, default=None, help="Optional timeout per CNF file, in seconds.")
+    parser.add_argument("--DLIS", type=int, choices=[0, 1], default=0, help="Set to 1 to enable DLIS variable selection.")
     args = parser.parse_args()
 
     solver = Path(args.solver)
@@ -135,17 +138,18 @@ def main():
 
     rows = []
     for cnf_path in cnf_files:
-        row = run_solver(solver, cnf_path, test_dir, args.timeout)
+        row = run_solver(solver, cnf_path, test_dir, args.timeout, args.DLIS)
         rows.append(row)
         status = "OK" if row["correct"] == "TRUE" else "FAIL"
         print(
             f"[{status}] {cnf_path}: expected={row['expected_result']} "
-            f"actual={row['actual_result']}"
+            f"actual={row['actual_result']} DLIS={row['DLIS']}"
         )
 
     fieldnames = [
         "cnf_file",
         "category",
+        "DLIS",
         "expected_result",
         "actual_result",
         "correct",
