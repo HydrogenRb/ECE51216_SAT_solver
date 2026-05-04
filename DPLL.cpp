@@ -308,10 +308,10 @@ bool Change_WatchedLit_FLAG(const string& value, bool& useWatchedLit) {
 int main(int argc, char* argv[]){
     bool useDLIS_FLAG = false;
     bool useWatchedLit_FLAG = false;
+    char* cnf_file;
     for (int i = 0; i < argc; i++) {
         string arg = argv[i];
         string value;
-
         if (arg == "--DLIS") {
             if (i + 1 >= argc) { //检查是否有后续参数
                 cerr << "error: --DLIS requires 0 or 1\n";
@@ -328,6 +328,9 @@ int main(int argc, char* argv[]){
             value = argv[++i];
             Change_WatchedLit_FLAG(value, useWatchedLit_FLAG);
             }
+        else if (arg[0] != '-') {
+            cnf_file = argv[i];
+        }
     }
         
     int num_var = 0;
@@ -340,7 +343,7 @@ int main(int argc, char* argv[]){
 
     queue<int> propQ;
 
-    if(!readCNF(argv[1], num_var, num_clause, clauses)) return 1;
+    if(!readCNF(cnf_file, num_var, num_clause, clauses)) return 1;
 
     vector<int> assignment(num_var+1,0);
     initWatchLists(clauses, watch1, watch2, watchList, num_var);
