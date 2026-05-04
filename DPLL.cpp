@@ -359,7 +359,7 @@ int main(int argc, char* argv[]){
         cout << "\n";
     }*/
 
-    if (dpll(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+    if (dpll(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){ //(dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG))
         cout << "RESULT:SAT\n";
         cout << "ASSIGNMENT:";
         for (int i=1; i<= num_var; i++){
