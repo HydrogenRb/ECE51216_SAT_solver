@@ -50,7 +50,7 @@ int literalValue(int literal, vector<int>& assignment){
     return -assignment[var]; //-x
 }
 
-/*bool isClauseSat(vector<int>& clause, vector<int>& assignment){
+bool isClauseSat(vector<int>& clause, vector<int>& assignment){
     for (int i=0; i<clause.size(); i++){
         int literal = clause[i];
         if (literalValue(literal, assignment) == 1) return true;
@@ -83,17 +83,16 @@ bool getUnitLiteral(vector<int>& clause, vector<int>& assignment, int& unit_lite
         return true;
     }
     return false;
-}*/
-
-//x: x=1, x': x=-1
-void assignLiteral(int literal, vector<int>& assignment, queue<int>& propQ){
-    int var = abs(literal);
-    if (literal > 0) assignment[var] = 1; 
-    else assignment[var] = -1;
-    propQ.push(literal); 
 }
 
-/*bool unitPropagation(vector<vector<int>>& clauses, vector<int>& assignment, queue<int>& propQ){
+//x: x=1, x': x=-1
+void assignLiteral(int literal, vector<int>& assignment){
+    int var = abs(literal);
+    if (literal > 0) assignment[var] = 1; 
+    else assignment[var] = -1; 
+}
+
+bool unitPropagation(vector<vector<int>>& clauses, vector<int>& assignment){
     bool changed = true;
     while (changed){
         changed = false;
@@ -103,7 +102,7 @@ void assignLiteral(int literal, vector<int>& assignment, queue<int>& propQ){
             if (isClauseConflict(clause, assignment)) return false;
             int unit_Literal;
             if (getUnitLiteral(clause, assignment, unit_Literal)){
-                assignLiteral(unit_Literal, assignment, propQ);
+                assignLiteral(unit_Literal, assignment);
                 changed = true;
             }
         }
@@ -117,7 +116,7 @@ bool allClauseSat(vector<vector<int>>& clauses, vector<int>& assignment){
         if (!isClauseSat(clause, assignment)) return false;
     }
     return true;
-}*/
+}
 
 int chooseVar(vector<int>& assignment){
     for (int i=1; i<assignment.size(); i++){
@@ -212,7 +211,10 @@ bool watchedUnitPropagation(vector<vector<int>>& clauses, vector<int>& assignmen
             //3.the other w is not true, unable to find new w//
             else{
                 //the other W is not assigned
-                if (otherWVal == 0) assignLiteral(otherWLiteral, assignment, propQ);
+                if (otherWVal == 0){
+                    assignLiteral(otherWLiteral, assignment); 
+                    propQ.push(otherWLiteral);  
+                } 
                 //the other W is false
                 else return false;
             }
@@ -221,9 +223,9 @@ bool watchedUnitPropagation(vector<vector<int>>& clauses, vector<int>& assignmen
     return true;
 }
 
-bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
+bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
     if (!watchedUnitPropagation(clauses, assignment, watch1, watch2, watchList, propQ, num_var)) return false;
-    if (allVarAssigned(assignment))return true;
+    if (allVarAssigned(assignment)) return true;
     int var = chooseVar(assignment);
     if (var == -1) return false;
 
@@ -233,8 +235,9 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& wa
     vector<vector<int>> pre_watchList = watchList;
     queue<int> pre_propQ = propQ;
 
-    assignLiteral(var, assignment, propQ);
-    if (dpll(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+    assignLiteral(var, assignment);
+    propQ.push(var);
+    if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
         return true;
     }
     assignment = pre_assign;
@@ -243,8 +246,9 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& wa
     watchList = pre_watchList;
     propQ = pre_propQ;
 
-    assignLiteral(-var, assignment, propQ);
-    if (dpll(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+    assignLiteral(-var, assignment);
+    propQ.push(-var);
+    if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
         return true;
     }
     assignment = pre_assign;
@@ -252,6 +256,29 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& wa
     watch2 = pre_watch2;
     watchList = pre_watchList;
     propQ = pre_propQ;
+
+    return false;
+}
+
+bool dpll(vector<vector<int>>& clauses, vector<int>& assignment){
+    if (!unitPropagation(clauses, assignment)) return false;
+    if (allClauseSat(clauses, assignment)) return true;
+    int var = chooseVar(assignment);
+    if (var == -1) return false;
+
+    vector<int> pre_assign = assignment;
+
+    assignment[var] = 1;
+    if (dpll(clauses, assignment)){
+        return true;
+    }
+    assignment = pre_assign;
+
+    assignment[var] = -1;
+    if (dpll(clauses, assignment)){
+        return true;
+    }
+    assignment = pre_assign;
 
     return false;
 }
@@ -340,29 +367,28 @@ int main(int argc, char* argv[]){
     vector<int> watch1;
     vector<int> watch2;
     vector<vector<int>> watchList;
-
     queue<int> propQ;
 
     if(!readCNF(cnf_file, num_var, num_clause, clauses)) return 1;
 
     vector<int> assignment(num_var+1,0);
-    initWatchLists(clauses, watch1, watch2, watchList, num_var);
-    for (int i = 0; i < clauses.size(); i++) {
-        if (clauses[i].size() == 1) {
-            assignLiteral(clauses[i][0], assignment, propQ);
+
+    bool result;
+    if (useWatchedLit_FLAG){
+        initWatchLists(clauses, watch1, watch2, watchList, num_var);
+        for (int i = 0; i < clauses.size(); i++) {
+            if (clauses[i].size() == 1) {
+                assignLiteral(clauses[i][0], assignment);
+                propQ.push(clauses[i][0]);
+            }
         }
+        result = dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var);
+    }
+    else{
+        result = dpll(clauses, assignment);
     }
 
-    /*cout << "Watch lists initialized\n";
-    for (int i = 1; i <= 2 * num_var; i++) {
-        cout << "watchList[" << i << "]: ";
-        for (int j = 0; j < watchList[i].size(); j++) {
-            cout << watchList[i][j] << " ";
-        }
-        cout << "\n";
-    }*/
-
-    if (dpll(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){ //(dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG))
+    if (result){ //(dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG))
         cout << "RESULT:SAT\n";
         cout << "ASSIGNMENT:";
         for (int i=1; i<= num_var; i++){
