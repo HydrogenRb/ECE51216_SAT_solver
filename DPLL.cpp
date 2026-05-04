@@ -281,6 +281,30 @@ bool verifySolution(vector<vector<int>>& clauses, vector<int>& assignment)
     return true;
 }
 
+bool Change_DLIS_FLAG(const string& value, bool& useDLIS) {
+    if (value == "0") {
+        useDLIS = false;
+        return true;
+    }
+    if (value == "1") {
+        useDLIS = true;
+        return true;
+    }
+    return false;
+}
+
+bool Change_WatchedLit_FLAG(const string& value, bool& useWatchedLit) {
+    if (value == "0") {
+        useWatchedLit = false;
+        return true;
+    }
+    if (value == "1") {
+        useWatchedLit = true;
+        return true;
+    }
+    return false;
+}
+
 int main(int argc, char* argv[]){
     bool useDLIS_FLAG = false;
     bool useWatchedLit_FLAG = false;
