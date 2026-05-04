@@ -215,7 +215,6 @@ int chooseVar(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLI
             }
         }
     }
-    //To liu: 你可能修改这个部分
     return 2; //1表示成功 2表示没有变量了
 }
 
