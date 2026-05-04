@@ -282,11 +282,30 @@ bool verifySolution(vector<vector<int>>& clauses, vector<int>& assignment)
 }
 
 int main(int argc, char* argv[]){
-    if (argc<2){
-        cout << "Input format: ./mysAT benchmark.cnf\n";
-        return 1;
+    bool useDLIS_FLAG = false;
+    bool useWatchedLit_FLAG = false;
+    for (int i = 0; i < argc; i++) {
+        string arg = argv[i];
+        string value;
+
+        if (arg == "--DLIS") {
+            if (i + 1 >= argc) { //检查是否有后续参数
+                cerr << "error: --DLIS requires 0 or 1\n";
+                return 1;
+            }
+            value = argv[++i];
+            Change_DLIS_FLAG(value, useDLIS_FLAG);
+        }
+        if (arg == "--watched-literals") {
+            if (i + 1 >= argc) { //检查是否有后续参数
+                cerr << "error: --watched-literals requires 0 or 1\n";
+                return 1;
+            }
+            value = argv[++i];
+            Change_WatchedLit_FLAG(value, useWatchedLit_FLAG);
+            }
     }
-    
+        
     int num_var = 0;
     int num_clause = 0;
     vector<vector<int>> clauses;
