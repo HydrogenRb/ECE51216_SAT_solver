@@ -15,3 +15,11 @@ usage: batch.py [-h] [--solver SOLVER] [--test-dir TEST_DIR] [--output OUTPUT]
 输入python3 batch.py运行
 
 例子：python3 batch.py --timeout 10 --DLIS 0 //设置10秒timeout，关闭DLIS功能，运行前14个相关文件夹中的cnf
+
+测试用例子
+make all //重新编译
+//人类：去修改python中的文件夹等
+python3 batch.py --timeout 15 --DLIS 0 --watched-literals 0 --output W0D0.csv //运行
+python3 batch.py --timeout 15 --DLIS 1 --watched-literals 0 --output W0D1.csv
+python3 batch.py --timeout 15 --DLIS 0 --watched-literals 1 --output W1D0.csv
+python3 batch.py --timeout 15 --DLIS 1 --watched-literals 1 --output W1D1.csv
