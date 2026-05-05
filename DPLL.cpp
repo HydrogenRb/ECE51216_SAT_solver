@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <chrono>
+#include <algorithm>
 
 using namespace std;
 
@@ -42,40 +43,134 @@ void monitor_end() {
 }
 
 void monitor_print_results() {
-    printf("\n[monitor output] ========== PERFORMANCE ANALYSIS RESULTS ==========\n");
-    printf("[monitor output] Start Time: %.6f\n",
+    std::printf("\n[monitor output] ========== PERFORMANCE ANALYSIS RESULTS ==========\n");
+    std::printf("[monitor output] Start Time: %.6f\n",
            chrono::duration<double>(monitor_stats.monitor_start_time.time_since_epoch()).count());
-    printf("[monitor output] Total Execution Time: %.6f seconds\n", monitor_stats.monitor_total_time);
-    printf("[monitor output] Unit Propagation Time: %.6f seconds (%.2f%% of total)\n", 
+    std::printf("[monitor output] Total Execution Time: %.6f seconds\n", monitor_stats.monitor_total_time);
+    std::printf("[monitor output] Unit Propagation Time: %.6f seconds (%.2f%% of total)\n", 
            monitor_stats.monitor_unit_propagation_time,
            (monitor_stats.monitor_total_time > 0) ? 
            (monitor_stats.monitor_unit_propagation_time / monitor_stats.monitor_total_time * 100) : 0);
     
-    printf("\n[monitor output] --- Operation Counters ---\n");
-    printf("[monitor output] Total Clause Checks: %lld\n", monitor_stats.monitor_clause_checks);
-    printf("[monitor output] Variable Assignments: %lld\n", monitor_stats.monitor_variable_assignments);
-    printf("[monitor output] Backtrack Operations: %lld\n", monitor_stats.monitor_backtrack_count);
-    printf("[monitor output] State Copies: %lld\n", monitor_stats.monitor_state_copies);
-    printf("[monitor output] Unit Propagation Calls: %lld\n", monitor_stats.monitor_unit_propagation_calls);
-    printf("[monitor output] Unit Propagation Rounds: %lld\n", monitor_stats.monitor_unit_propagation_rounds);
+    std::printf("\n[monitor output] --- Operation Counters ---\n");
+    std::printf("[monitor output] Total Clause Checks: %lld\n", monitor_stats.monitor_clause_checks);
+    std::printf("[monitor output] Variable Assignments: %lld\n", monitor_stats.monitor_variable_assignments);
+    std::printf("[monitor output] Backtrack Operations: %lld\n", monitor_stats.monitor_backtrack_count);
+    std::printf("[monitor output] State Copies: %lld\n", monitor_stats.monitor_state_copies);
+    std::printf("[monitor output] Unit Propagation Calls: %lld\n", monitor_stats.monitor_unit_propagation_calls);
+    std::printf("[monitor output] Unit Propagation Rounds: %lld\n", monitor_stats.monitor_unit_propagation_rounds);
     
-    printf("\n[monitor output] --- Recursion Analysis ---\n");
-    printf("[monitor output] Current Recursion Depth: %d\n", monitor_stats.monitor_current_recursion_depth);
-    printf("[monitor output] Maximum Recursion Depth: %d\n", monitor_stats.monitor_max_recursion_depth);
+    std::printf("\n[monitor output] --- Recursion Analysis ---\n");
+    std::printf("[monitor output] Current Recursion Depth: %d\n", monitor_stats.monitor_current_recursion_depth);
+    std::printf("[monitor output] Maximum Recursion Depth: %d\n", monitor_stats.monitor_max_recursion_depth);
     
-    printf("\n[monitor output] --- Efficiency Metrics ---\n");
+    std::printf("\n[monitor output] --- Efficiency Metrics ---\n");
     if (monitor_stats.monitor_variable_assignments > 0) {
-        printf("[monitor output] Avg Checks per Assignment: %.2f\n", 
+        std::printf("[monitor output] Avg Checks per Assignment: %.2f\n", 
                (double)monitor_stats.monitor_clause_checks / monitor_stats.monitor_variable_assignments);
     }
     if (monitor_stats.monitor_unit_propagation_calls > 0) {
-        printf("[monitor output] Avg Rounds per UP Call: %.2f\n", 
+        std::printf("[monitor output] Avg Rounds per UP Call: %.2f\n", 
                (double)monitor_stats.monitor_unit_propagation_rounds / monitor_stats.monitor_unit_propagation_calls);
     }
-    printf("[monitor output] ============================================================\n\n");
+    std::printf("[monitor output] ============================================================\n\n");
 }
 // ==============================================================
 
+
+// ======DLIS相关方法 begin === 
+int DLIS_literalValue(int literal, const vector<int>& assignment) {
+    int var = abs(literal);
+    if (assignment[var] == 0) return 0;
+    if (literal > 0) return assignment[var];
+    return -assignment[var];
+}
+
+bool DLIS_isClauseSat(const vector<int>& clause, const vector<int>& assignment) {
+    for (int literal : clause) {
+        if (DLIS_literalValue(literal, assignment) == 1) return true;
+    }
+    return false;
+}
+
+int chooseDLISLiteral(const vector<vector<int>>& clauses, const vector<int>& assignment) {
+    vector<int> positive_count(assignment.size(), 0);
+    vector<int> negative_count(assignment.size(), 0);
+
+
+    for (const vector<int>& clause : clauses) {
+        if (DLIS_isClauseSat(clause, assignment)) continue;
+
+        for (int literal : clause) {
+            int var = abs(literal);
+            if (assignment[var] != 0) continue;
+
+            if (literal > 0) positive_count[var]++;
+            else negative_count[var]++;
+        }
+    }
+    int best_literal = 0;
+    int best_count = -1;
+//重点！DLIS的目标是一次性尽可能满足更多，所以统计neg和pos是非常重要的，遍历的时候先遍历能先被满足的！
+    for (int var = 1; var < static_cast<int>(assignment.size()); var++) {
+        if (assignment[var] != 0) continue;
+
+        if (positive_count[var] > best_count) {
+            best_count = positive_count[var];
+            best_literal = var;
+        }
+        if (negative_count[var] > best_count) {
+            best_count = negative_count[var];
+            best_literal = -var;
+        }
+    }
+
+    if (best_literal != 0) return best_literal;
+
+    for (int var = 1; var < static_cast<int>(assignment.size()); var++) {
+        if (assignment[var] == 0) return var;
+    }
+    return 0;
+}
+
+bool DLIS_Init(vector<int>& DLIS_order, const vector<vector<int>>& clauses){ //或许不需要这个
+    int maxVar = DLIS_order.size();
+
+    vector<int> temp_counter(maxVar, 0);
+
+    for (const auto& clause : clauses) {
+        for (int lit : clause) {
+            int var = abs(lit);   // 正反 literal 一起算
+            temp_counter[var]++;
+        }
+    }
+
+    DLIS_order.clear();
+
+    for (int var = 1; var <= maxVar; var++) {
+        if (temp_counter[var] > 0) {
+            DLIS_order.push_back(var);
+        }
+    }
+
+    //排序 DLIS_counter，但依据是 temp_counter[var]
+    sort(DLIS_order.begin(), DLIS_order.end(),
+         [&](int a, int b) {
+             if (temp_counter[a] != temp_counter[b]) {
+                 return temp_counter[a] < temp_counter[b]; 
+                 // 出现次数少的排前面
+             }
+             return a < b;
+             // 出现次数相同，变量编号小的排前面
+         });
+
+    return true;
+}
+
+//note vector 支持随机访问
+//note v[v.size() - 2]访问倒数第二个
+ 
+// =========
 bool readCNF(string filename, int& num_var, int& num_clause, vector<vector<int>>& clauses){
     ifstream fin(filename);
     if (!fin) {
@@ -218,7 +313,7 @@ int chooseVar(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLI
     return 2; //1表示成功 2表示没有变量了
 }
 
-bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, bool useWatchedLit){
+bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, bool useWatchedLit,vector<int>& DLIS_order){
     monitor_stats.monitor_current_recursion_depth++;
     if (monitor_stats.monitor_current_recursion_depth > monitor_stats.monitor_max_recursion_depth) {
         monitor_stats.monitor_max_recursion_depth = monitor_stats.monitor_current_recursion_depth;
@@ -239,14 +334,15 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, b
         return false;
     }
     //到这一步，var是选择的变量
-    int first_value = var > 0 ? 1 : -1; //可以删掉这个吗？
+    int first_value = var > 0 ? 1 : -1;
+    var = abs(var);
     
     vector<int> pre_node = assignment;
     monitor_stats.monitor_state_copies++;
     
     assignment[var] = first_value;
     monitor_stats.monitor_backtrack_count++;
-    if (dpll(clauses, assignment, useDLIS, useWatchedLit)){
+    if (dpll(clauses, assignment, useDLIS, useWatchedLit, DLIS_order)){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
@@ -256,7 +352,7 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, b
     
     assignment[var] = -first_value;
     monitor_stats.monitor_backtrack_count++;
-    if (dpll(clauses, assignment, useDLIS, useWatchedLit)){
+    if (dpll(clauses, assignment, useDLIS, useWatchedLit, DLIS_order)){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
@@ -317,12 +413,26 @@ bool Change_WatchedLit_FLAG(const string& value, bool& useWatchedLit) {
     return false;
 }
 
+bool Change_monitor_FLAG(const string& value, bool& monitor_FLAG) {
+    if (value == "0") {
+        monitor_FLAG = false;
+        return true;
+    }
+    if (value == "1") {
+        monitor_FLAG = true;
+        return true;
+    }
+    return false;
+}
+
 int main(int argc, char* argv[]){ //输入参数有
     //示例 DPLL --DLIS 1
     //示例 DPLL --watched-literals 1
     //示例 DPLL --DLIS 1 --watched-literals 1
-    bool useDLIS_FLAG = false;
-    bool useWatchedLit_FLAG = false;
+    bool useDLIS_FLAG = true;
+    bool useWatchedLit_FLAG = true;
+    bool monitor_FLAG = false;
+    char* cnf_file = "test_BMS_k3_n100_m429_0.cnf";
 
     for (int i = 0; i < argc; i++) {
         string arg = argv[i];
@@ -345,6 +455,19 @@ int main(int argc, char* argv[]){ //输入参数有
             value = argv[++i];
             Change_WatchedLit_FLAG(value, useWatchedLit_FLAG);
             }
+
+        if (arg == "--monitor") {
+            if (i + 1 >= argc) { //检查是否有后续参数
+                cerr << "error: --monitor requires 0 or 1\n";
+                return 1;
+            }
+            value = argv[++i];
+            Change_monitor_FLAG(value, monitor_FLAG);
+            }
+
+        if (arg[0] != '-') {
+            cnf_file = argv[i];
+        }
     }
     
     monitor_start();
@@ -353,11 +476,14 @@ int main(int argc, char* argv[]){ //输入参数有
     int num_clause = 0;
     vector<vector<int>> clauses;
 
-    if(!readCNF(argv[1], num_var, num_clause, clauses)) return 1;
+    if(!readCNF(cnf_file, num_var, num_clause, clauses)) return 1;
 
-    vector<int> assignment(num_var+1,0);
+    vector<int> assignment(num_var+1,0); //assignment for gloabal //TODO change to INT8 or INT4
+    vector<int> DLIS_order(num_var+1,0); //assignmen for counter of DLIS
 
-    if (dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG)){
+    DLIS_Init(DLIS_order, clauses);
+
+    if (dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG, DLIS_order)){
         cout << "RESULT:SAT\n";
         cout << "ASSIGNMENT:";
         for (int i=1; i<= num_var; i++){
@@ -380,7 +506,7 @@ int main(int argc, char* argv[]){ //输入参数有
     }
     
     monitor_end();
-    monitor_print_results();
+    if (monitor_FLAG){monitor_print_results();}
 
     return 0;
 }
