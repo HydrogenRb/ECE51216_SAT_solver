@@ -6,6 +6,7 @@
 #include <fstream>
 #include <chrono>
 #include <algorithm>
+#include <queue>
 
 using namespace std;
 
@@ -313,7 +314,152 @@ int chooseVar(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLI
     return 2; //1表示成功 2表示没有变量了
 }
 
-bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, bool useWatchedLit,vector<int>& DLIS_order){
+// Simple variable selection (used by watched literals dpll)
+int chooseVar(vector<int>& assignment){
+    for (int i=1; i<assignment.size(); i++){
+        if (assignment[i] == 0) return i;
+    }
+    return -1;
+}
+
+//index used for watch list
+int litToIndex(int literal, int num_var){
+    if (literal > 0) return literal;
+    return num_var + abs(literal);
+}
+
+//set up watch list (which literal is being watched)
+void initWatchLists(vector<vector<int>>& clauses, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, int num_var){
+    watch1.resize(clauses.size());
+    watch2.resize(clauses.size());
+    watchList.resize(2*num_var+1);
+
+    for (int i=0; i<clauses.size(); i++){
+        watch1[i] = 0;
+        if (clauses[i].size() > 1) watch2[i] = 1;
+        else watch2[i] = 0;
+
+        int literal1 = clauses[i][watch1[i]];
+        int literal2 = clauses[i][watch2[i]];
+
+        watchList[litToIndex(literal1, num_var)].push_back(i);
+        if (literal2 != literal1){
+            watchList[litToIndex(literal2, num_var)].push_back(i);
+        }
+    }
+}
+
+bool allVarAssigned(vector<int>& assignment){
+    for (int i=1; i<assignment.size(); i++){
+        if (assignment[i] == 0) return false;
+    }
+    return true;
+}
+
+bool watchedUnitPropagation(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
+    while(!propQ.empty()){
+        //assign literal
+        int literal = propQ.front();
+        propQ.pop();
+        int falseLit = -literal;
+        int falseIndex = litToIndex(falseLit, num_var);
+        vector<int> watchingClauses = watchList[falseIndex];
+
+        for (int i=0; i<watchingClauses.size(); i++){
+            //find w1, w2 index and value
+            int clauseIndex = watchingClauses[i];
+            int w1Index = watch1[clauseIndex];
+            int w2Index = watch2[clauseIndex];
+            int w1Literal = clauses[clauseIndex][w1Index];
+            int w2Literal = clauses[clauseIndex][w2Index];
+
+            int otherWIndex;
+            int falseWNum;
+            if (w1Literal == falseLit){ //w1 is false
+                otherWIndex = w2Index;
+                falseWNum = 1;
+            }
+            else if (w2Literal == falseLit){ //w2 is false
+                otherWIndex = w1Index;
+                falseWNum = 2;
+            }
+            else continue; //w1 and w2 are not assigned
+
+            //for one w being assigned determine the next step
+            int otherWLiteral = clauses[clauseIndex][otherWIndex];
+            int otherWVal = literalValue(otherWLiteral, assignment);
+            //1.the other w is true//
+            if (otherWVal == 1) continue;
+            //2.the other w is not true, able to find new w//
+            bool findNewW = false;
+            for (int j=0; j<clauses[clauseIndex].size(); j++){
+                if (j == otherWIndex) continue;
+                int newW = clauses[clauseIndex][j];
+                if (literalValue(newW, assignment) != -1){
+                    if (falseWNum == 1) watch1[clauseIndex] = j;
+                    else watch2[clauseIndex] = j;
+
+                    watchList[litToIndex(newW, num_var)].push_back(clauseIndex);
+                    findNewW = true;
+                    break;
+                }
+            }
+            if (findNewW) continue;
+            //3.the other w is not true, unable to find new w//
+            else{
+                //the other W is not assigned
+                if (otherWVal == 0){
+                    assignLiteral(otherWLiteral, assignment); 
+                    propQ.push(otherWLiteral);  
+                } 
+                //the other W is false
+                else return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
+    if (!watchedUnitPropagation(clauses, assignment, watch1, watch2, watchList, propQ, num_var)) return false;
+    if (allVarAssigned(assignment)) return true;
+    int var = chooseVar(assignment);
+    if (var == -1) return false;
+
+    vector<int> pre_assign = assignment;
+    vector<int> pre_watch1 = watch1;
+    vector<int> pre_watch2 = watch2;
+    vector<vector<int>> pre_watchList = watchList;
+    queue<int> pre_propQ = propQ;
+
+    assignLiteral(var, assignment);
+    propQ.push(var);
+    if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+        return true;
+    }
+    monitor_stats.monitor_backtrack_count++;
+    assignment = pre_assign;
+    watch1 = pre_watch1;
+    watch2 = pre_watch2;
+    watchList = pre_watchList;
+    propQ = pre_propQ;
+
+    assignLiteral(-var, assignment);
+    propQ.push(-var);
+    if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+        return true;
+    }
+    monitor_stats.monitor_backtrack_count++;
+    assignment = pre_assign;
+    watch1 = pre_watch1;
+    watch2 = pre_watch2;
+    watchList = pre_watchList;
+    propQ = pre_propQ;
+
+    return false;
+}
+
+bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, vector<int>& DLIS_order){
     monitor_stats.monitor_current_recursion_depth++;
     if (monitor_stats.monitor_current_recursion_depth > monitor_stats.monitor_max_recursion_depth) {
         monitor_stats.monitor_max_recursion_depth = monitor_stats.monitor_current_recursion_depth;
@@ -341,21 +487,21 @@ bool dpll(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLIS, b
     monitor_stats.monitor_state_copies++;
     
     assignment[var] = first_value;
-    monitor_stats.monitor_backtrack_count++;
-    if (dpll(clauses, assignment, useDLIS, useWatchedLit, DLIS_order)){
+    if (dpll(clauses, assignment, useDLIS, DLIS_order)){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
+    monitor_stats.monitor_backtrack_count++;
     
     assignment = pre_node;
     monitor_stats.monitor_state_copies++;
     
     assignment[var] = -first_value;
-    monitor_stats.monitor_backtrack_count++;
-    if (dpll(clauses, assignment, useDLIS, useWatchedLit, DLIS_order)){
+    if (dpll(clauses, assignment, useDLIS, DLIS_order)){
         monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
+    monitor_stats.monitor_backtrack_count++;
     
     assignment = pre_node;
     monitor_stats.monitor_state_copies++;
@@ -429,12 +575,12 @@ int main(int argc, char* argv[]){ //输入参数有
     //示例 DPLL --DLIS 1
     //示例 DPLL --watched-literals 1
     //示例 DPLL --DLIS 1 --watched-literals 1
-    bool useDLIS_FLAG = true;
-    bool useWatchedLit_FLAG = true;
+    bool useDLIS_FLAG = false;
+    bool useWatchedLit_FLAG = false;
     bool monitor_FLAG = false;
-    char* cnf_file = "test_BMS_k3_n100_m429_0.cnf";
+    char* cnf_file = nullptr;
 
-    for (int i = 0; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         string arg = argv[i];
         string value;
 
@@ -454,7 +600,7 @@ int main(int argc, char* argv[]){ //输入参数有
             }
             value = argv[++i];
             Change_WatchedLit_FLAG(value, useWatchedLit_FLAG);
-            }
+        }
 
         if (arg == "--monitor") {
             if (i + 1 >= argc) { //检查是否有后续参数
@@ -463,11 +609,16 @@ int main(int argc, char* argv[]){ //输入参数有
             }
             value = argv[++i];
             Change_monitor_FLAG(value, monitor_FLAG);
-            }
+        }
 
         if (arg[0] != '-') {
             cnf_file = argv[i];
         }
+    }
+
+    if (cnf_file == nullptr) {
+        cerr << "error: no CNF file specified\n";
+        return 1;
     }
     
     monitor_start();
@@ -478,12 +629,32 @@ int main(int argc, char* argv[]){ //输入参数有
 
     if(!readCNF(cnf_file, num_var, num_clause, clauses)) return 1;
 
-    vector<int> assignment(num_var+1,0); //assignment for gloabal //TODO change to INT8 or INT4
-    vector<int> DLIS_order(num_var+1,0); //assignmen for counter of DLIS
+    vector<int> assignment(num_var+1,0); //assignment for global
+    vector<int> DLIS_order(num_var+1,0); //assignment for counter of DLIS
 
     DLIS_Init(DLIS_order, clauses);
 
-    if (dpll(clauses, assignment, useDLIS_FLAG, useWatchedLit_FLAG, DLIS_order)){
+    bool result;
+    if (useWatchedLit_FLAG){
+        vector<int> watch1;
+        vector<int> watch2;
+        vector<vector<int>> watchList;
+        queue<int> propQ;
+
+        initWatchLists(clauses, watch1, watch2, watchList, num_var);
+        for (int i = 0; i < (int)clauses.size(); i++) {
+            if (clauses[i].size() == 1) {
+                assignLiteral(clauses[i][0], assignment);
+                propQ.push(clauses[i][0]);
+            }
+        }
+        result = dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var);
+    }
+    else{
+        result = dpll(clauses, assignment, useDLIS_FLAG, DLIS_order);
+    }
+
+    if (result){
         cout << "RESULT:SAT\n";
         cout << "ASSIGNMENT:";
         for (int i=1; i<= num_var; i++){
