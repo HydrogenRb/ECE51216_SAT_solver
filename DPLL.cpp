@@ -11,6 +11,7 @@
 using namespace std;
 
 int chooseDLISLiteral(const vector<vector<int>>& clauses, const vector<int>& assignment);
+int useDLIS_g = 1;
 
 // ==================== Performance Monitor ====================
 // All monitor variables start with monitor_ prefix
@@ -422,9 +423,17 @@ bool watchedUnitPropagation(vector<vector<int>>& clauses, vector<int>& assignmen
 
 bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
     if (!watchedUnitPropagation(clauses, assignment, watch1, watch2, watchList, propQ, num_var)) return false;
-    if (allVarAssigned(assignment)) return true;
-    int var = chooseVar(assignment);
-    if (var == -1) return false;
+    //if (allVarAssigned(assignment)) return true;
+
+    if (allClauseSat(clauses, assignment)) return true;
+
+    int var = 0;
+    if (chooseVar(clauses, assignment, useDLIS_g, var) == 2) {
+        monitor_stats.monitor_current_recursion_depth--;
+        return false;
+    }
+    int firstLit = var;
+    int secondLit = -var;
 
     vector<int> pre_assign = assignment;
     vector<int> pre_watch1 = watch1;
@@ -432,8 +441,8 @@ bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vect
     vector<vector<int>> pre_watchList = watchList;
     queue<int> pre_propQ = propQ;
 
-    assignLiteral(var, assignment);
-    propQ.push(var);
+    assignLiteral(firstLit, assignment);
+    propQ.push(firstLit);
     if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
         return true;
     }
@@ -444,8 +453,8 @@ bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vect
     watchList = pre_watchList;
     propQ = pre_propQ;
 
-    assignLiteral(-var, assignment);
-    propQ.push(-var);
+    assignLiteral(secondLit, assignment);
+    propQ.push(secondLit);
     if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
         return true;
     }
@@ -534,14 +543,24 @@ bool verifySolution(vector<vector<int>>& clauses, vector<int>& assignment)
 
     return true;
 }
+/*
+void completeAssignment(vector<int>& assignment) {
+    for (int i = 1; i < assignment.size(); i++) {
+        if (assignment[i] == 0) {
+            assignment[i] = 1;  //默认赋 true
+        }
+    }
+}*/
 
 bool Change_DLIS_FLAG(const string& value, bool& useDLIS) {
     if (value == "0") {
         useDLIS = false;
+        useDLIS_g = 0;
         return true;
     }
     if (value == "1") {
         useDLIS = true;
+        useDLIS_g = 1;
         return true;
     }
     return false;
@@ -575,8 +594,8 @@ int main(int argc, char* argv[]){ //输入参数有
     //示例 DPLL --DLIS 1
     //示例 DPLL --watched-literals 1
     //示例 DPLL --DLIS 1 --watched-literals 1
-    bool useDLIS_FLAG = false;
-    bool useWatchedLit_FLAG = false;
+    bool useDLIS_FLAG = true;
+    bool useWatchedLit_FLAG = true;
     bool monitor_FLAG = false;
     char* cnf_file = nullptr;
 
