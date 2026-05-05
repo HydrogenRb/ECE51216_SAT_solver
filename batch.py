@@ -175,9 +175,9 @@ def run_solver(solver, cnf_path, test_dir, timeout, dlis, watched_literals):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run mysAT on every CNF file under test/ and save monitor stats to CSV."
+        description="Run mySAT on every CNF file under test/ and save monitor stats to CSV."
     )
-    parser.add_argument("--solver", default="./mysAT", help="Path to the DPLL solver executable.")
+    parser.add_argument("--solver", default="./mySAT", help="Path to the DPLL solver executable.")
     parser.add_argument("--test-dir", default="test", help="Directory containing sat/ and unsat/ CNF files.")
     parser.add_argument("--output", default="batch_results.csv", help="CSV output path.")
     parser.add_argument("--timeout", type=float, default=None, help="Optional timeout per CNF file, in seconds.")
