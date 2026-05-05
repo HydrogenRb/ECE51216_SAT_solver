@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug SAT Solver",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/mySAT",
+      "args": ["test_BMS_k3_n100_m429_0.cnf"],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "${workspaceFolder}/.vscode/gdb-clean.sh",
+      "preLaunchTask": "build"
+    }
+  ]
+}

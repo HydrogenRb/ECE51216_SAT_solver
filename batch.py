@@ -7,6 +7,13 @@ import sys
 from pathlib import Path
 
 
+PRIORITY_FOLDERS = [
+    "sat/BMS_k3_n100_m429",
+    "unsat/UUF50.218.1000",
+]
+TESTS_PER_PRIORITY_FOLDER = 14
+
+
 MONITOR_COLUMNS = [
     "monitor_start_time",
     "monitor_total_time",
@@ -63,10 +70,65 @@ def parse_monitor(stdout):
     return stats
 
 
-def run_solver(solver, cnf_path, test_dir, timeout, dlis):
+def natural_sort_key(path):
+    return [
+        int(part) if part.isdigit() else part.lower()
+        for part in re.split(r"([0-9]+)", str(path))
+    ]
+
+
+def collect_cnf_files(test_dir):
+    cnf_files = []
+    seen = set()
+
+    for folder in PRIORITY_FOLDERS:
+        folder_path = test_dir / folder
+        if not folder_path.is_dir():
+            print(f"warning: priority folder not found: {folder_path}", file=sys.stderr)
+            continue
+
+        folder_files = sorted(
+            folder_path.rglob("*.cnf"),
+            key=lambda path: natural_sort_key(path.relative_to(test_dir)),
+        )
+        if TESTS_PER_PRIORITY_FOLDER is not None:
+            folder_files = folder_files[:TESTS_PER_PRIORITY_FOLDER]
+
+        for cnf_path in folder_files:
+            resolved = cnf_path.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            cnf_files.append(cnf_path)
+
+    return cnf_files
+
+
+def priority_folder_for(cnf_path, test_dir):
+    relative_path = cnf_path.relative_to(test_dir)
+    for folder in PRIORITY_FOLDERS:
+        folder_path = Path(folder)
+        try:
+            relative_path.relative_to(folder_path)
+            return folder
+        except ValueError:
+            continue
+    return ""
+
+
+def run_solver(solver, cnf_path, test_dir, timeout, dlis, watched_literals):
     try:
         completed = subprocess.run(
-            [str(solver), str(cnf_path), "--DLIS", str(dlis)],
+            [
+                str(solver),
+                str(cnf_path),
+                "--DLIS",
+                str(dlis),
+                "--watched-literals",
+                str(watched_literals),
+                "--monitor",
+                "1",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -97,7 +159,9 @@ def run_solver(solver, cnf_path, test_dir, timeout, dlis):
     row = {
         "cnf_file": str(cnf_path),
         "category": cnf_path.relative_to(test_dir).parts[0],
+        "priority_folder": priority_folder_for(cnf_path, test_dir),
         "DLIS": dlis,
+        "watched_literals": watched_literals,
         "expected_result": expected,
         "actual_result": actual,
         "correct": "TRUE" if correct else "FALSE",
@@ -118,6 +182,13 @@ def main():
     parser.add_argument("--output", default="batch_results.csv", help="CSV output path.")
     parser.add_argument("--timeout", type=float, default=None, help="Optional timeout per CNF file, in seconds.")
     parser.add_argument("--DLIS", type=int, choices=[0, 1], default=0, help="Set to 1 to enable DLIS variable selection.")
+    parser.add_argument(
+        "--watched-literals",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help="Set to 1 to enable watched-literals mode in the solver.",
+    )
     args = parser.parse_args()
 
     solver = Path(args.solver)
@@ -131,25 +202,42 @@ def main():
         print(f"error: test directory not found: {test_dir}", file=sys.stderr)
         return 1
 
-    cnf_files = sorted(test_dir.rglob("*.cnf"))
+    cnf_files = collect_cnf_files(test_dir)
     if not cnf_files:
-        print(f"error: no .cnf files found under {test_dir}", file=sys.stderr)
+        print(f"error: no .cnf files found under priority folders in {test_dir}", file=sys.stderr)
         return 1
+
+    print(
+        f"Selected {len(cnf_files)} CNF files from {len(PRIORITY_FOLDERS)} priority folders "
+        f"(limit {TESTS_PER_PRIORITY_FOLDER} per folder).",
+        flush=True,
+    )
 
     rows = []
     for cnf_path in cnf_files:
-        row = run_solver(solver, cnf_path, test_dir, args.timeout, args.DLIS)
+        row = run_solver(
+            solver,
+            cnf_path,
+            test_dir,
+            args.timeout,
+            args.DLIS,
+            args.watched_literals,
+        )
         rows.append(row)
         status = "OK" if row["correct"] == "TRUE" else "FAIL"
         print(
             f"[{status}] {cnf_path}: expected={row['expected_result']} "
-            f"actual={row['actual_result']} DLIS={row['DLIS']}"
+            f"actual={row['actual_result']} DLIS={row['DLIS']} "
+            f"watched-literals={row['watched_literals']}",
+            flush=True,
         )
 
     fieldnames = [
         "cnf_file",
         "category",
+        "priority_folder",
         "DLIS",
+        "watched_literals",
         "expected_result",
         "actual_result",
         "correct",

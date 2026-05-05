@@ -1,24 +1,27 @@
 # Makefile for DPLL SAT Solver
+# default g++ -std=c++17 DPLL.cpp -o DPLL ./DPLL test.cnf
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -O2
+CXXFLAGS = -std=c++17 -Wall -Wextra -g -O3
 
 # Target executable name
-TARGET = mysAT
+TARGET = mySAT
 PYTHON = python3
 BATCH_SCRIPT = batch.py
 BATCH_OUTPUT = batch_results.csv
 TEST_DIR = test
 DLIS ?= 1
+WATCHED_LITERALS ?= 1
 
 # Source files
-SOURCES = DPLL.cpp DLIS.cpp
+SOURCES = DPLL.cpp
 
 # Object files
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Default target: build the executable
 all: $(TARGET)
+	./$(TARGET) test_BMS_k3_n100_m429_0.cnf
 
 # Build the executable
 $(TARGET): $(OBJECTS)
@@ -32,9 +35,12 @@ $(TARGET): $(OBJECTS)
 clean:
 	rm -f $(OBJECTS) $(TARGET) $(BATCH_OUTPUT)
 
+veryclean: clean # 这个地方想要clean log？
+	rm -f TARGET
+
 # Batch test: run batch.py over test/**/*.cnf and write monitor stats to CSV.
 batch: $(TARGET) $(BATCH_SCRIPT)
-	$(PYTHON) $(BATCH_SCRIPT) --solver ./$(TARGET) --test-dir $(TEST_DIR) --output $(BATCH_OUTPUT) --DLIS $(DLIS)
+	$(PYTHON) $(BATCH_SCRIPT) --solver ./$(TARGET) --test-dir $(TEST_DIR) --output $(BATCH_OUTPUT) --DLIS $(DLIS) --watched-literals $(WATCHED_LITERALS)
 
 # Test with all CNF files under test/
 test: batch
@@ -50,7 +56,7 @@ help:
 	@echo "  test   - Alias for batch"
 	@echo "  help   - Display this help message"
 	@echo ""
-	@echo "Run the solver with: ./mysAT <cnf_file> [--DLIS 0|1]"
-	@echo "Run batch with DLIS enabled: make batch DLIS=1"
+	@echo "Run the solver with: ./mysAT <cnf_file> [--DLIS 0|1] [--watched-literals 0|1]"
+	@echo "Run batch with DLIS and watched-literals enabled: make batch DLIS=1 WATCHED_LITERALS=1"
 
 .PHONY: all clean batch test help
