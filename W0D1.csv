@@ -127,3 +127,4 @@ test/unsat/ssa-unsat/ssa6288-047-unsat.cnf,unsat,unsat/,1,0,UNSAT,UNSAT,TRUE,0,F
 test/unsat/UUF250.1065.100/uuf250-01.cnf,unsat,unsat/,1,0,UNSAT,UNKNOWN,FALSE,,TRUE,,,,,,,,,,,,
 test/unsat/UUF250.1065.100/uuf250-02.cnf,unsat,unsat/,1,0,UNSAT,UNKNOWN,FALSE,,TRUE,,,,,,,,,,,,
 test/unsat/UUF250.1065.100/uuf250-03.cnf,unsat,unsat/,1,0,UNSAT,UNKNOWN,FALSE,,TRUE,,,,,,,,,,,,
+test/unsat/UUF250.1065.100/uuf250-04.cnf,unsat,unsat/,1,0,UNSAT,UNKNOWN,FALSE,,TRUE,,,,,,,,,,,,
