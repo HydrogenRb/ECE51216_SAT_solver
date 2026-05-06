@@ -19,7 +19,16 @@ usage: batch.py [-h] [--solver SOLVER] [--test-dir TEST_DIR] [--output OUTPUT]
 测试用例子
 make all //重新编译
 //人类：去修改python中的文件夹等
-python3 batch.py --timeout 15 --DLIS 0 --watched-literals 0 --output W0D0.csv //运行
-python3 batch.py --timeout 15 --DLIS 1 --watched-literals 0 --output W0D1.csv
-python3 batch.py --timeout 15 --DLIS 0 --watched-literals 1 --output W1D0.csv
-python3 batch.py --timeout 15 --DLIS 1 --watched-literals 1 --output W1D1.csv
+python3 batch.py --timeout 300 --DLIS 0 --watched-literals 0 --output W0D0.csv //运行
+python3 batch.py --timeout 300 --DLIS 1 --watched-literals 0 --output W0D1.csv
+python3 batch.py --timeout 300 --DLIS 0 --watched-literals 1 --output W1D0.csv
+python3 batch.py --timeout 300 --DLIS 1 --watched-literals 1 --output W1D1.csv
+
+python3 batch.py --timeout 180 --DLIS 0 --watched-literals 0 --sat_test UF75.325.100 --output UF75_sat_180_W0D0.csv
+python3 batch.py --timeout 180 --DLIS 1 --watched-literals 0 --sat_test UF75.325.100 --output UF75_sat_180_W0D1.csv
+python3 batch.py --timeout 180 --DLIS 0 --watched-literals 1 --sat_test UF75.325.100 --output UF75_sat_180_W1D0.csv
+python3 batch.py --timeout 180 --DLIS 1 --watched-literals 1 --sat_test UF75.325.100 --output UF75_sat_180_W1D1.csv
+python3 batch.py --timeout 180 --DLIS 0 --watched-literals 0 --unsat_test UUF75.325.100 --output UF75_unsat_180_W0D0.csv
+python3 batch.py --timeout 180 --DLIS 1 --watched-literals 0 --unsat_test UUF75.325.100 --output UF75_unsat_180_W0D1.csv
+python3 batch.py --timeout 180 --DLIS 0 --watched-literals 1 --unsat_test UUF75.325.100 --output UF75_unsat_180_W1D0.csv
+python3 batch.py --timeout 180 --DLIS 1 --watched-literals 1 --unsat_test UUF75.325.100 --output UF75_unsat_180_W1D1.csv

@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 
 
-PRIORITY_FOLDERS = [
-    "sat/BMS_k3_n100_m429",
-    "unsat/UUF50.218.1000",
+DEFAULT_PRIORITY_FOLDERS = [
+    "sat/",
+    "unsat/",
 ]
-TESTS_PER_PRIORITY_FOLDER = 10
+TESTS_PER_PRIORITY_FOLDER = 10000
 
 
 MONITOR_COLUMNS = [
@@ -77,11 +77,41 @@ def natural_sort_key(path):
     ]
 
 
-def collect_cnf_files(test_dir):
+def normalize_test_folder(kind, folder, test_dir):
+    folder = folder.strip()
+    if not folder:
+        raise ValueError(f"{kind} test folder cannot be empty")
+
+    parts = [part for part in Path(folder).parts if part not in ("", ".")]
+    if parts and parts[0] == test_dir.name:
+        parts = parts[1:]
+
+    if parts and parts[0] in ("sat", "unsat"):
+        if parts[0] != kind:
+            raise ValueError(f"{kind}_test cannot point to {parts[0]}/: {folder}")
+        parts = parts[1:]
+
+    return str(Path(kind, *parts))
+
+
+def build_priority_folders(args, test_dir):
+    priority_folders = []
+    for folder in args.sat_test:
+        priority_folders.append(normalize_test_folder("sat", folder, test_dir))
+    for folder in args.unsat_test:
+        priority_folders.append(normalize_test_folder("unsat", folder, test_dir))
+
+    if not priority_folders:
+        priority_folders = DEFAULT_PRIORITY_FOLDERS
+
+    return priority_folders
+
+
+def collect_cnf_files(test_dir, priority_folders, tests_per_folder):
     cnf_files = []
     seen = set()
 
-    for folder in PRIORITY_FOLDERS:
+    for folder in priority_folders:
         folder_path = test_dir / folder
         if not folder_path.is_dir():
             print(f"warning: priority folder not found: {folder_path}", file=sys.stderr)
@@ -91,8 +121,8 @@ def collect_cnf_files(test_dir):
             folder_path.rglob("*.cnf"),
             key=lambda path: natural_sort_key(path.relative_to(test_dir)),
         )
-        if TESTS_PER_PRIORITY_FOLDER is not None:
-            folder_files = folder_files[:TESTS_PER_PRIORITY_FOLDER]
+        if tests_per_folder is not None:
+            folder_files = folder_files[:tests_per_folder]
 
         for cnf_path in folder_files:
             resolved = cnf_path.resolve()
@@ -104,9 +134,9 @@ def collect_cnf_files(test_dir):
     return cnf_files
 
 
-def priority_folder_for(cnf_path, test_dir):
+def priority_folder_for(cnf_path, test_dir, priority_folders):
     relative_path = cnf_path.relative_to(test_dir)
-    for folder in PRIORITY_FOLDERS:
+    for folder in priority_folders:
         folder_path = Path(folder)
         try:
             relative_path.relative_to(folder_path)
@@ -116,7 +146,7 @@ def priority_folder_for(cnf_path, test_dir):
     return ""
 
 
-def run_solver(solver, cnf_path, test_dir, timeout, dlis, watched_literals):
+def run_solver(solver, cnf_path, test_dir, timeout, dlis, watched_literals, priority_folders):
     try:
         completed = subprocess.run(
             [
@@ -159,7 +189,7 @@ def run_solver(solver, cnf_path, test_dir, timeout, dlis, watched_literals):
     row = {
         "cnf_file": str(cnf_path),
         "category": cnf_path.relative_to(test_dir).parts[0],
-        "priority_folder": priority_folder_for(cnf_path, test_dir),
+        "priority_folder": priority_folder_for(cnf_path, test_dir, priority_folders),
         "DLIS": dlis,
         "watched_literals": watched_literals,
         "expected_result": expected,
@@ -181,6 +211,24 @@ def main():
     parser.add_argument("--test-dir", default="test", help="Directory containing sat/ and unsat/ CNF files.")
     parser.add_argument("--output", default="batch_results.csv", help="CSV output path.")
     parser.add_argument("--timeout", type=float, default=None, help="Optional timeout per CNF file, in seconds.")
+    parser.add_argument(
+        "--sat_test",
+        action="append",
+        default=[],
+        help="SAT test folder under test/sat/. Example: --sat_test UF150.645.100",
+    )
+    parser.add_argument(
+        "--unsat_test",
+        action="append",
+        default=[],
+        help="UNSAT test folder under test/unsat/. Example: --unsat_test UUF150.645.100",
+    )
+    parser.add_argument(
+        "--tests-per-folder",
+        type=int,
+        default=TESTS_PER_PRIORITY_FOLDER,
+        help="Maximum CNF files to run from each selected folder.",
+    )
     parser.add_argument("--DLIS", type=int, choices=[0, 1], default=0, help="Set to 1 to enable DLIS variable selection.")
     parser.add_argument(
         "--watched-literals",
@@ -192,6 +240,8 @@ def main():
     args = parser.parse_args()
 
     solver = Path(args.solver)
+    if not solver.is_absolute():
+        solver = Path.cwd() / solver
     test_dir = Path(args.test_dir)
     output = Path(args.output)
 
@@ -202,35 +252,22 @@ def main():
         print(f"error: test directory not found: {test_dir}", file=sys.stderr)
         return 1
 
-    cnf_files = collect_cnf_files(test_dir)
+    try:
+        priority_folders = build_priority_folders(args, test_dir)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    cnf_files = collect_cnf_files(test_dir, priority_folders, args.tests_per_folder)
     if not cnf_files:
         print(f"error: no .cnf files found under priority folders in {test_dir}", file=sys.stderr)
         return 1
 
     print(
-        f"Selected {len(cnf_files)} CNF files from {len(PRIORITY_FOLDERS)} priority folders "
-        f"(limit {TESTS_PER_PRIORITY_FOLDER} per folder).",
+        f"Selected {len(cnf_files)} CNF files from {len(priority_folders)} priority folders "
+        f"(limit {args.tests_per_folder} per folder): {', '.join(priority_folders)}",
         flush=True,
     )
-
-    rows = []
-    for cnf_path in cnf_files:
-        row = run_solver(
-            solver,
-            cnf_path,
-            test_dir,
-            args.timeout,
-            args.DLIS,
-            args.watched_literals,
-        )
-        rows.append(row)
-        status = "OK" if row["correct"] == "TRUE" else "FAIL"
-        print(
-            f"[{status}] {cnf_path}: expected={row['expected_result']} "
-            f"actual={row['actual_result']} DLIS={row['DLIS']} "
-            f"watched-literals={row['watched_literals']}",
-            flush=True,
-        )
 
     fieldnames = [
         "cnf_file",
@@ -245,15 +282,40 @@ def main():
         "timed_out",
     ] + MONITOR_COLUMNS + ["stderr"]
 
+    passed = 0
+    written = 0
     with output.open("w", newline="") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        csv_file.flush()
 
-    passed = sum(1 for row in rows if row["correct"] == "TRUE")
-    print(f"Wrote {len(rows)} rows to {output}")
-    print(f"Correct results: {passed}/{len(rows)}")
-    return 0 if passed == len(rows) else 1
+        for cnf_path in cnf_files:
+            row = run_solver(
+                solver,
+                cnf_path,
+                test_dir,
+                args.timeout,
+                args.DLIS,
+                args.watched_literals,
+                priority_folders,
+            )
+            writer.writerow(row)
+            csv_file.flush()
+            written += 1
+            if row["correct"] == "TRUE":
+                passed += 1
+
+            status = "OK" if row["correct"] == "TRUE" else "FAIL"
+            print(
+                f"[{status}] {cnf_path}: expected={row['expected_result']} "
+                f"actual={row['actual_result']} DLIS={row['DLIS']} "
+                f"watched-literals={row['watched_literals']}",
+                flush=True,
+            )
+
+    print(f"Wrote {written} rows to {output}")
+    print(f"Correct results: {passed}/{written}")
+    return 0 if passed == written else 1
 
 
 if __name__ == "__main__":
