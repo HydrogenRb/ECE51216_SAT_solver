@@ -20,6 +20,7 @@ struct PerformanceMonitor {
     chrono::high_resolution_clock::time_point monitor_start_time;
     double monitor_total_time = 0.0;
     double monitor_unit_propagation_time = 0.0;
+    long long monitor_peak_memory_kb = 0;
     
     // Operation counters
     long long monitor_clause_checks = 0;
@@ -44,6 +45,30 @@ void monitor_end() {
     monitor_stats.monitor_total_time = elapsed.count();
 }
 
+void monitor_record_unit_propagation_time(const chrono::high_resolution_clock::time_point& up_start) {
+    auto up_end = chrono::high_resolution_clock::now();
+    chrono::duration<double> up_elapsed = up_end - up_start;
+    monitor_stats.monitor_unit_propagation_time += up_elapsed.count();
+}
+
+long long monitor_read_peak_memory_kb() {
+    ifstream status_file("/proc/self/status");
+    string line;
+
+    while (getline(status_file, line)) {
+        if (line.rfind("VmHWM:", 0) == 0) {
+            string label;
+            string unit;
+            long long value = 0;
+            stringstream ss(line);
+            ss >> label >> value >> unit;
+            return value;
+        }
+    }
+
+    return 0;
+}
+
 void monitor_print_results() {
     std::printf("\n[monitor output] ========== PERFORMANCE ANALYSIS RESULTS ==========\n");
     std::printf("[monitor output] Start Time: %.6f\n",
@@ -53,6 +78,7 @@ void monitor_print_results() {
            monitor_stats.monitor_unit_propagation_time,
            (monitor_stats.monitor_total_time > 0) ? 
            (monitor_stats.monitor_unit_propagation_time / monitor_stats.monitor_total_time * 100) : 0);
+    std::printf("[monitor output] Peak Memory Usage: %lld kB\n", monitor_stats.monitor_peak_memory_kb);
     
     std::printf("\n[monitor output] --- Operation Counters ---\n");
     std::printf("[monitor output] Total Clause Checks: %lld\n", monitor_stats.monitor_clause_checks);
@@ -134,7 +160,7 @@ int chooseDLISLiteral(const vector<vector<int>>& clauses, const vector<int>& ass
     }
     return 0;
 }
-
+/*
 bool DLIS_Init(vector<int>& DLIS_order, const vector<vector<int>>& clauses){ //或许不需要这个
     int maxVar = DLIS_order.size();
 
@@ -168,7 +194,7 @@ bool DLIS_Init(vector<int>& DLIS_order, const vector<vector<int>>& clauses){ //�
 
     return true;
 }
-
+*/
 //note vector 支持随机访问
 //note v[v.size() - 2]访问倒数第二个
  
@@ -272,9 +298,7 @@ bool unitPropagation(vector<vector<int>>& clauses, vector<int>& assignment){
             vector<int> clause = clauses[i];
             if (isClauseSat(clause, assignment)) continue;
             if (isClauseConflict(clause, assignment)) {
-                auto up_end = chrono::high_resolution_clock::now();
-                chrono::duration<double> up_elapsed = up_end - up_start;
-                monitor_stats.monitor_unit_propagation_time += up_elapsed.count();
+                monitor_record_unit_propagation_time(up_start);
                 return false;
             }
             int unit_Literal;
@@ -285,9 +309,7 @@ bool unitPropagation(vector<vector<int>>& clauses, vector<int>& assignment){
         }
     }
     
-    auto up_end = chrono::high_resolution_clock::now();
-    chrono::duration<double> up_elapsed = up_end - up_start;
-    monitor_stats.monitor_unit_propagation_time += up_elapsed.count();
+    monitor_record_unit_propagation_time(up_start);
     return true;
 }
 
@@ -313,14 +335,6 @@ int chooseVar(vector<vector<int>>& clauses, vector<int>& assignment, bool useDLI
         }
     }
     return 2; //1表示成功 2表示没有变量了
-}
-
-// Simple variable selection (used by watched literals dpll)
-int chooseVar(vector<int>& assignment){
-    for (int i=1; i<assignment.size(); i++){
-        if (assignment[i] == 0) return i;
-    }
-    return -1;
 }
 
 //index used for watch list
@@ -358,7 +372,12 @@ bool allVarAssigned(vector<int>& assignment){
 }
 
 bool watchedUnitPropagation(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
+    monitor_stats.monitor_unit_propagation_calls++;
+    auto up_start = chrono::high_resolution_clock::now();
+
     while(!propQ.empty()){
+        monitor_stats.monitor_unit_propagation_rounds++;
+
         //assign literal
         int literal = propQ.front();
         propQ.pop();
@@ -414,18 +433,33 @@ bool watchedUnitPropagation(vector<vector<int>>& clauses, vector<int>& assignmen
                     propQ.push(otherWLiteral);  
                 } 
                 //the other W is false
-                else return false;
+                else {
+                    monitor_record_unit_propagation_time(up_start);
+                    return false;
+                }
             }
         }
     }
+    monitor_record_unit_propagation_time(up_start);
     return true;
 }
 
 bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vector<int>& watch1, vector<int>& watch2, vector<vector<int>>& watchList, queue<int>& propQ, int num_var){
-    if (!watchedUnitPropagation(clauses, assignment, watch1, watch2, watchList, propQ, num_var)) return false;
+    monitor_stats.monitor_current_recursion_depth++;
+    if (monitor_stats.monitor_current_recursion_depth > monitor_stats.monitor_max_recursion_depth) {
+        monitor_stats.monitor_max_recursion_depth = monitor_stats.monitor_current_recursion_depth;
+    }
+
+    if (!watchedUnitPropagation(clauses, assignment, watch1, watch2, watchList, propQ, num_var)) {
+        monitor_stats.monitor_current_recursion_depth--;
+        return false;
+    }
     //if (allVarAssigned(assignment)) return true;
 
-    if (allClauseSat(clauses, assignment)) return true;
+    if (allClauseSat(clauses, assignment)) {
+        monitor_stats.monitor_current_recursion_depth--;
+        return true;
+    }
 
     int var = 0;
     if (chooseVar(clauses, assignment, useDLIS_g, var) == 2) {
@@ -440,10 +474,12 @@ bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vect
     vector<int> pre_watch2 = watch2;
     vector<vector<int>> pre_watchList = watchList;
     queue<int> pre_propQ = propQ;
+    monitor_stats.monitor_state_copies++;
 
     assignLiteral(firstLit, assignment);
     propQ.push(firstLit);
     if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+        monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
     monitor_stats.monitor_backtrack_count++;
@@ -452,10 +488,12 @@ bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vect
     watch2 = pre_watch2;
     watchList = pre_watchList;
     propQ = pre_propQ;
+    monitor_stats.monitor_state_copies++;
 
     assignLiteral(secondLit, assignment);
     propQ.push(secondLit);
     if (dpll_watchedLit(clauses, assignment, watch1, watch2, watchList, propQ, num_var)){
+        monitor_stats.monitor_current_recursion_depth--;
         return true;
     }
     monitor_stats.monitor_backtrack_count++;
@@ -464,7 +502,9 @@ bool dpll_watchedLit(vector<vector<int>>& clauses, vector<int>& assignment, vect
     watch2 = pre_watch2;
     watchList = pre_watchList;
     propQ = pre_propQ;
+    monitor_stats.monitor_state_copies++;
 
+    monitor_stats.monitor_current_recursion_depth--;
     return false;
 }
 
@@ -651,7 +691,7 @@ int main(int argc, char* argv[]){ //输入参数有
     vector<int> assignment(num_var+1,0); //assignment for global
     vector<int> DLIS_order(num_var+1,0); //assignment for counter of DLIS
 
-    DLIS_Init(DLIS_order, clauses);
+    //DLIS_Init(DLIS_order, clauses);
 
     bool result;
     if (useWatchedLit_FLAG){
@@ -680,6 +720,9 @@ int main(int argc, char* argv[]){ //输入参数有
             if (assignment[i] == 1){
                 cout << i << "=1";
             }
+            else if (assignment[i] == -1){
+                cout << i << "=-1";
+            }
             else{
                 cout << i << "=0";
             }
@@ -696,7 +739,10 @@ int main(int argc, char* argv[]){ //输入参数有
     }
     
     monitor_end();
-    if (monitor_FLAG){monitor_print_results();}
+    if (monitor_FLAG){
+        monitor_stats.monitor_peak_memory_kb = monitor_read_peak_memory_kb();
+        monitor_print_results();
+    }
 
     return 0;
 }

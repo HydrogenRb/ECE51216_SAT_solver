@@ -1,0 +1,7 @@
+Selected 7 CNF files from 1 priority folders (limit 100 per folder): sat/bmc-sat
+[FAIL] test/sat/bmc-sat/bmc-ibm-5.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/sat/bmc-sat/bmc-ibm-6.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/sat/bmc-sat/bmc-ibm-7.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/sat/bmc-sat/bmc-ibm-10.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/sat/bmc-sat/bmc-ibm-11.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/sat/bmc-sat/bmc-ibm-12.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=0

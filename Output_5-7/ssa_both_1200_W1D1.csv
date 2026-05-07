@@ -1,0 +1,9 @@
+cnf_file,category,priority_folder,DLIS,watched_literals,expected_result,actual_result,correct,exit_code,timed_out,monitor_start_time,monitor_total_time,monitor_unit_propagation_time,monitor_peak_memory_kb,monitor_clause_checks,monitor_variable_assignments,monitor_backtrack_count,monitor_state_copies,monitor_unit_propagation_rounds,monitor_unit_propagation_calls,monitor_current_recursion_depth,monitor_max_recursion_depth,stderr
+test/sat/ssa-sat/ssa7552-038.cnf,sat,sat/ssa-sat,1,1,SAT,SAT,TRUE,0,FALSE,1778166919.344997,0.196732,0.000144,19620,52926,1778,4,86,1743,86,0,82,
+test/sat/ssa-sat/ssa7552-158.cnf,sat,sat/ssa-sat,1,1,SAT,SAT,TRUE,0,FALSE,1778166919.643604,3.701708,0.094103,16340,481324,139762,4607,6982,134382,4681,0,74,
+test/sat/ssa-sat/ssa7552-159.cnf,sat,sat/ssa-sat,1,1,SAT,SAT,TRUE,0,FALSE,1778166923.445277,12.497743,0.211355,17976,1624216,490518,16384,24655,474130,16465,0,81,
+test/sat/ssa-sat/ssa7552-160.cnf,sat,sat/ssa-sat,1,1,SAT,SAT,TRUE,0,FALSE,1778166935.948222,3.303448,0.186796,19512,84716,130141,4097,6231,126035,4185,0,88,
+test/unsat/ssa-unsat/ssa0432-003-unsat.cnf,unsat,unsat/ssa-unsat,1,1,UNSAT,UNSAT,TRUE,0,FALSE,1778166922.852696,1.690030,0.186110,4156,309026,134780,6230,9345,131262,6231,0,20,
+test/unsat/ssa-unsat/ssa2670-130-unsat.cnf,unsat,unsat/ssa-unsat,1,1,UNSAT,UNKNOWN,FALSE,,TRUE,,,,,,,,,,,,,
+test/unsat/ssa-unsat/ssa2670-141-unsat.cnf,unsat,unsat/ssa-unsat,1,1,UNSAT,UNKNOWN,FALSE,,TRUE,,,,,,,,,,,,,
+test/unsat/ssa-unsat/ssa6288-047-unsat.cnf,unsat,unsat/ssa-unsat,1,1,UNSAT,UNSAT,TRUE,0,FALSE,1778169324.745402,0.099420,0.000010,6576,0,98,0,0,94,1,0,1,

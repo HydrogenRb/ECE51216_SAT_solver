@@ -1,0 +1,11 @@
+Selected 50 CNF files from 1 priority folders (limit 100 per folder): unsat/UUF150.645.100
+[OK] test/unsat/UUF150.645.100/uuf150-01.cnf: expected=UNSAT actual=UNSAT DLIS=0 watched-literals=0
+[FAIL] test/unsat/UUF150.645.100/uuf150-02.cnf: expected=UNSAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/unsat/UUF150.645.100/uuf150-03.cnf: expected=UNSAT actual=UNKNOWN DLIS=0 watched-literals=0
+[OK] test/unsat/UUF150.645.100/uuf150-04.cnf: expected=UNSAT actual=UNSAT DLIS=0 watched-literals=0
+[OK] test/unsat/UUF150.645.100/uuf150-05.cnf: expected=UNSAT actual=UNSAT DLIS=0 watched-literals=0
+[FAIL] test/unsat/UUF150.645.100/uuf150-06.cnf: expected=UNSAT actual=UNKNOWN DLIS=0 watched-literals=0
+[OK] test/unsat/UUF150.645.100/uuf150-07.cnf: expected=UNSAT actual=UNSAT DLIS=0 watched-literals=0
+[OK] test/unsat/UUF150.645.100/uuf150-08.cnf: expected=UNSAT actual=UNSAT DLIS=0 watched-literals=0
+[FAIL] test/unsat/UUF150.645.100/uuf150-09.cnf: expected=UNSAT actual=UNKNOWN DLIS=0 watched-literals=0
+[OK] test/unsat/UUF150.645.100/uuf150-010.cnf: expected=UNSAT actual=UNSAT DLIS=0 watched-literals=0

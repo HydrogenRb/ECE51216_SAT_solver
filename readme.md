@@ -32,3 +32,57 @@ python3 batch.py --timeout 180 --DLIS 0 --watched-literals 0 --unsat_test UUF75.
 python3 batch.py --timeout 180 --DLIS 1 --watched-literals 0 --unsat_test UUF75.325.100 --output UF75_unsat_180_W0D1.csv
 python3 batch.py --timeout 180 --DLIS 0 --watched-literals 1 --unsat_test UUF75.325.100 --output UF75_unsat_180_W1D0.csv
 python3 batch.py --timeout 180 --DLIS 1 --watched-literals 1 --unsat_test UUF75.325.100 --output UF75_unsat_180_W1D1.csv
+
+# 5/7
+## 标准测试
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test UF75.325.100 --output UF75_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test UF75.325.100 --unsat_test UUF75.325.100 --output UF75_both_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test UF75.325.100 --unsat_test UUF75.325.100 --output UF75_both_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test UF75.325.100 --unsat_test UUF75.325.100 --output UF75_both_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test UUF75.325.100 --output UF75_unsat_1200_W0D0.csv"
+
+## 测试UF150
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test UF150.645.100 --output UF150_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test UF150.645.100 --output UF150_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test UF150.645.100 --output UF150_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test UF150.645.100 --output UF150_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W1D1.csv"
+
+## BMC和bf测试第一部分
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test bmc-sat --output bmc_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test bmc-sat --output bmc_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test bmc-sat --output bmc_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test bmc-sat --output bmc_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test bf --output bf_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test bf --output bf_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test bf --output bf_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test bf --output bf_unsat_1200_W1D1.csv"
+
+## BMC和bf测试第二部分
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test bf-2 --output bf_2_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test bf-2 --output bf_2_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test bf-2 --output bf_2_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test bf-2 --output bf_2_unsat_1200_W1D1.csv"
+
+## ssa测试
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test ssa-sat --output ssa_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test ssa-sat --output ssa_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test ssa-sat --output ssa_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test ssa-sat --output ssa_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test ssa-unsat --output ssa_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test ssa-unsat --output ssa_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test ssa-unsat --output ssa_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test ssa-unsat --output ssa_unsat_1200_W1D1.csv"
+
+## Python对比测试
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W1D1.csv"

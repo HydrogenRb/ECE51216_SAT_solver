@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+set -u
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_DIR="$ROOT_DIR/logs/batch_terminals"
+mkdir -p "$LOG_DIR"
+
+# Add or remove batch commands here. Each command will run in its own terminal/window.
+COMMANDS=(
+## 标准测试
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test UF75.325.100 --output UF75_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test UF75.325.100 --unsat_test UUF75.325.100 --output UF75_both_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test UF75.325.100 --unsat_test UUF75.325.100 --output UF75_both_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test UF75.325.100 --unsat_test UUF75.325.100 --output UF75_both_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test UUF75.325.100 --output UF75_unsat_1200_W0D0.csv"
+
+## 测试UF150
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test UF150.645.100 --output UF150_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test UF150.645.100 --output UF150_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test UF150.645.100 --output UF150_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test UF150.645.100 --output UF150_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test UUF150.645.100 --output UF150_unsat_1200_W1D1.csv"
+
+## BMC和bf测试第一部分
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test bmc-sat --output bmc_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test bmc-sat --output bmc_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test bmc-sat --output bmc_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test bmc-sat --output bmc_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test bf --output bf_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test bf --output bf_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test bf --output bf_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test bf --output bf_unsat_1200_W1D1.csv"
+
+## BMC和bf测试第二部分
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test bmc-sat-2 --output bmc_2_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test bf-2 --output bf_2_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test bf-2 --output bf_2_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test bf-2 --output bf_2_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test bf-2 --output bf_2_unsat_1200_W1D1.csv"
+
+## ssa测试
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --sat_test ssa-sat --output ssa_sat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --sat_test ssa-sat --output ssa_sat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --sat_test ssa-sat --output ssa_sat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --sat_test ssa-sat --output ssa_sat_1200_W1D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test ssa-unsat --output ssa_unsat_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test ssa-unsat --output ssa_unsat_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test ssa-unsat --output ssa_unsat_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test ssa-unsat --output ssa_unsat_1200_W1D1.csv"
+
+## Python对比测试
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 0 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W0D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 0 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W0D1.csv"
+"python3 batch.py --timeout 1200 --DLIS 0 --watched-literals 1 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W1D0.csv"
+"python3 batch.py --timeout 1200 --DLIS 1 --watched-literals 1 --unsat_test UUF50.218.1000 --output UUF50_python_1200_W1D1.csv"
+
+)
+
+make_runner_script() {
+    local index="$1"
+    local command_text="$2"
+    local runner="$LOG_DIR/run_${index}.sh"
+    local log_file="$LOG_DIR/run_${index}.log"
+
+    {
+        printf '#!/usr/bin/env bash\n'
+        printf 'cd %q || exit 1\n' "$ROOT_DIR"
+        printf 'echo "[batch %s] started at $(date)"\n' "$index"
+        printf 'echo "[batch %s] command: %s"\n' "$index" "$command_text"
+        printf 'echo\n'
+        printf 'set -o pipefail\n'
+        printf 'eval %q 2>&1 | tee %q\n' "$command_text" "$log_file"
+        printf 'status=${PIPESTATUS[0]}\n'
+        printf 'echo\n'
+        printf 'echo "[batch %s] finished at $(date), exit code: $status"\n' "$index"
+        printf 'echo "[batch %s] log: %s"\n' "$index" "$log_file"
+        printf 'echo\n'
+        printf 'echo "Press Enter to close this terminal..."\n'
+        printf 'read -r _\n'
+        printf 'exit "$status"\n'
+    } > "$runner"
+
+    chmod +x "$runner"
+    printf '%s\n' "$runner"
+}
+
+launch_runner() {
+    local index="$1"
+    local runner="$2"
+    local title="mySAT-batch-$index"
+
+    if [[ -n "${DISPLAY:-}" ]] && command -v gnome-terminal >/dev/null 2>&1; then
+        gnome-terminal --title="$title" -- bash "$runner"
+        return 0
+    fi
+
+    if [[ -n "${DISPLAY:-}" ]] && command -v xfce4-terminal >/dev/null 2>&1; then
+        xfce4-terminal --title="$title" --hold --command "bash $(printf '%q' "$runner")"
+        return 0
+    fi
+
+    if [[ -n "${DISPLAY:-}" ]] && command -v konsole >/dev/null 2>&1; then
+        konsole --new-tab --hold --workdir "$ROOT_DIR" -p tabtitle="$title" -e bash "$runner"
+        return 0
+    fi
+
+    if [[ -n "${DISPLAY:-}" ]] && command -v xterm >/dev/null 2>&1; then
+        xterm -T "$title" -hold -e bash "$runner" &
+        return 0
+    fi
+
+    if command -v tmux >/dev/null 2>&1; then
+        if [[ -n "${TMUX:-}" ]]; then
+            tmux new-window -n "$title" "bash $(printf '%q' "$runner")"
+        else
+            local session="mysat_batches"
+            if ! tmux has-session -t "$session" 2>/dev/null; then
+                tmux new-session -d -s "$session" -n "$title" "bash $(printf '%q' "$runner")"
+            else
+                tmux new-window -t "$session" -n "$title" "bash $(printf '%q' "$runner")"
+            fi
+            echo "tmux session started: $session"
+            echo "Attach with: tmux attach -t $session"
+        fi
+        return 0
+    fi
+
+    echo "No terminal emulator or tmux found. Running batch $index in background."
+    nohup bash "$runner" > "$LOG_DIR/run_${index}.launcher.log" 2>&1 &
+}
+
+main() {
+    if [[ ${#COMMANDS[@]} -eq 0 ]]; then
+        echo "No commands configured in COMMANDS."
+        return 1
+    fi
+
+    echo "Launching ${#COMMANDS[@]} batch command(s) from $ROOT_DIR"
+    echo "Logs will be written under $LOG_DIR"
+
+    local index=1
+    local runner
+    for command_text in "${COMMANDS[@]}"; do
+        runner="$(make_runner_script "$index" "$command_text")"
+        launch_runner "$index" "$runner"
+        index=$((index + 1))
+    done
+}
+
+main "$@"

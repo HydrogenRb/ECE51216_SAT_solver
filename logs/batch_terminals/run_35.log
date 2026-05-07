@@ -1,0 +1,7 @@
+Selected 4 CNF files from 1 priority folders (limit 100 per folder): unsat/ssa-unsat
+[OK] test/unsat/ssa-unsat/ssa0432-003-unsat.cnf: expected=UNSAT actual=UNSAT DLIS=1 watched-literals=0
+[FAIL] test/unsat/ssa-unsat/ssa2670-130-unsat.cnf: expected=UNSAT actual=UNKNOWN DLIS=1 watched-literals=0
+[FAIL] test/unsat/ssa-unsat/ssa2670-141-unsat.cnf: expected=UNSAT actual=UNKNOWN DLIS=1 watched-literals=0
+[OK] test/unsat/ssa-unsat/ssa6288-047-unsat.cnf: expected=UNSAT actual=UNSAT DLIS=1 watched-literals=0
+Wrote 4 rows to ssa_unsat_1200_W0D1.csv
+Correct results: 2/4

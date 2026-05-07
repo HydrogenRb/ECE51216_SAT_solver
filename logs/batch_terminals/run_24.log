@@ -1,0 +1,9 @@
+Selected 6 CNF files from 1 priority folders (limit 100 per folder): sat/bmc-sat-2
+[FAIL] test/sat/bmc-sat-2/bmc-galileo-8.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+[FAIL] test/sat/bmc-sat-2/bmc-galileo-9.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+[FAIL] test/sat/bmc-sat-2/bmc-ibm-1.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+[FAIL] test/sat/bmc-sat-2/bmc-ibm-2.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+[FAIL] test/sat/bmc-sat-2/bmc-ibm-3.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+[FAIL] test/sat/bmc-sat-2/bmc-ibm-4.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+Wrote 6 rows to bmc_2_sat_1200_W1D0.csv
+Correct results: 0/6

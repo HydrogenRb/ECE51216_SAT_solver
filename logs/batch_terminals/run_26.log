@@ -1,0 +1,5 @@
+Selected 2 CNF files from 1 priority folders (limit 100 per folder): unsat/bf-2
+[FAIL] test/unsat/bf-2/bf1355-638.cnf: expected=UNSAT actual=UNKNOWN DLIS=0 watched-literals=0
+[FAIL] test/unsat/bf-2/bf2670-001.cnf: expected=UNSAT actual=UNKNOWN DLIS=0 watched-literals=0
+Wrote 2 rows to bf_2_unsat_1200_W0D0.csv
+Correct results: 0/2

@@ -11,13 +11,14 @@ DEFAULT_PRIORITY_FOLDERS = [
     "sat/",
     "unsat/",
 ]
-TESTS_PER_PRIORITY_FOLDER = 10000
+TESTS_PER_PRIORITY_FOLDER = 100
 
 
 MONITOR_COLUMNS = [
     "monitor_start_time",
     "monitor_total_time",
     "monitor_unit_propagation_time",
+    "monitor_peak_memory_kb",
     "monitor_clause_checks",
     "monitor_variable_assignments",
     "monitor_backtrack_count",
@@ -33,6 +34,7 @@ MONITOR_PATTERNS = {
     "monitor_start_time": r"Start Time:\s*([0-9.+eE-]+)",
     "monitor_total_time": r"Total Execution Time:\s*([0-9.+eE-]+)",
     "monitor_unit_propagation_time": r"Unit Propagation Time:\s*([0-9.+eE-]+)",
+    "monitor_peak_memory_kb": r"Peak Memory Usage:\s*([0-9]+)",
     "monitor_clause_checks": r"Total Clause Checks:\s*([0-9]+)",
     "monitor_variable_assignments": r"Variable Assignments:\s*([0-9]+)",
     "monitor_backtrack_count": r"Backtrack Operations:\s*([0-9]+)",

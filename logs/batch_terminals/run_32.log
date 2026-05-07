@@ -1,0 +1,7 @@
+Selected 4 CNF files from 1 priority folders (limit 100 per folder): sat/ssa-sat
+[FAIL] test/sat/ssa-sat/ssa7552-038.cnf: expected=SAT actual=UNKNOWN DLIS=0 watched-literals=1
+[OK] test/sat/ssa-sat/ssa7552-158.cnf: expected=SAT actual=SAT DLIS=0 watched-literals=1
+[OK] test/sat/ssa-sat/ssa7552-159.cnf: expected=SAT actual=SAT DLIS=0 watched-literals=1
+[OK] test/sat/ssa-sat/ssa7552-160.cnf: expected=SAT actual=SAT DLIS=0 watched-literals=1
+Wrote 4 rows to ssa_sat_1200_W1D0.csv
+Correct results: 3/4
