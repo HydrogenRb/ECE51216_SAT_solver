@@ -1,3 +1,29 @@
+# SAT Solver
+## Project Overview
+In this project, we will implement a SAT solver based on the
+DPLL backtracking algorithm with Boolean Constraint Prop-
+agation. The two additional heuristics we plan to implement
+are Watched literals DLIS.
+
+## Compilation
+Use this command to compile the project:
+```bash
+g++ -std=c++17 DPLL.cpp -o DPLL
+```
+
+## Run SAT Solver
+Use this command to run the implemented SAT Solver. The default setting enables both watched literals and DLIS.
+```bash
+./DPLL test.cnf
+```
+Some additional aurguments can be used to change the settings:
+```bash
+--DLIS Enables or disables the DLIS branching heuristic.
+--watched-literals Enables or disables watched-literal based unit propagation.
+--monitor Enables or disables performance monitor output.
+```
+
+
 g++ -std=c++17 DPLL.cpp -o DPLL
 ./DPLL test.cnf
 
