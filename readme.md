@@ -10,6 +10,7 @@ g++ -std=c++17 DPLL.cpp -o DPLL
 
 ## Input File
 The solver accepts DIMACS CNF format of input.
+
 Example:
 ```text
 p cnf 3 2
@@ -25,9 +26,9 @@ Use this command to run the implemented SAT Solver. The default setting enables 
 ```
 Some additional arguments can be used to change the settings:
 ```bash
---DLIS Enables or disables the DLIS branching heuristic.
---watched-literals Enables or disables watched-literal based unit propagation.
---monitor Enables or disables performance monitor output.
+--DLIS                Enables or disables the DLIS branching heuristic.
+--watched-literals    Enables or disables watched-literal based unit propagation.
+--monitor             Enables or disables performance monitor output.
 ```
 Example:
 ```bash
