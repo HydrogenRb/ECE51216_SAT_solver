@@ -1,9 +1,6 @@
 # SAT Solver
 ## Project Overview
-In this project, we will implement a SAT solver based on the
-DPLL backtracking algorithm with Boolean Constraint Prop-
-agation. The two additional heuristics we plan to implement
-are Watched literals DLIS.
+In this project, we implement a SAT solver based on the DPLL backtracking algorithm with Boolean Constraint Propagation. The two additional heuristics we plan to implement are watched literals and DLIS.
 
 ## Compilation
 Use this command to compile the project:
@@ -11,16 +8,49 @@ Use this command to compile the project:
 g++ -std=c++17 DPLL.cpp -o DPLL
 ```
 
+## Input File
+The solver accepts DIMACS CNF format of input.
+Example:
+```text
+p cnf 3 2
+1 -3 0
+2 3 -1 0
+```
+Additional CNF benchmarks could be found in here: https://www.cs.ubc.ca/%7Ehoos/SATLIB/benchm.html
+
 ## Run SAT Solver
 Use this command to run the implemented SAT Solver. The default setting enables both watched literals and DLIS.
 ```bash
 ./DPLL test.cnf
 ```
-Some additional aurguments can be used to change the settings:
+Some additional arguments can be used to change the settings:
 ```bash
 --DLIS Enables or disables the DLIS branching heuristic.
 --watched-literals Enables or disables watched-literal based unit propagation.
 --monitor Enables or disables performance monitor output.
+```
+Example:
+```bash
+./DPLL test.cnf --DLIS 0
+# this runs the SAT solver without the DLIS technique
+./DPLL test.cnf --watched-literals 0
+# this runs the SAT solver without the watched-literals technique
+./DPLL test.cnf --DLIS 0 --watched-literals 0
+# this runs the SAT solver without any advanced techniques
+```
+
+## Output Format
+SAT example:
+
+```text
+RESULT:SAT
+ASSIGNMENT:1=1 2=0 3=1
+```
+
+UNSAT example:
+
+```text
+RESULT:UNSAT
 ```
 
 
