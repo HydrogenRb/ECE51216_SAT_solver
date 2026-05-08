@@ -62,7 +62,8 @@ RESULT:UNSAT
 ## Run batch test
 ```bash
 python3 batch.py --timeout 180 --DLIS 0 --watched-literals 0 --sat_test UF75.325.100 --output UF75_sat_180_W0D0.csv
-
+```
+```text
 --timeout                         is the stop time
 --DLIS and --watched-literals     are flags
 --sat_test                        is the folder in the /sat folder
